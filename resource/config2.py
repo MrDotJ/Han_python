@@ -7,14 +7,14 @@ def get_config():
     upper_generator_info = np.array([
         [0,      1.1,    0,       0.3,      0.3,       10,      20],
         [3,      0.3,    0,       0.1,      0.1,       17,      34],
-        [2,      0.4,    0.18,    0.1,      0.1,       10,      20],
-        [4,      0.4,    0.18,    0.1,      0.1,       10,      20],
+        [2,      0.4,    0,    0.1,      0.1,       10,      20],
+        [4,      0.4,    0,    0.1,      0.1,       10,      20],
     ])
 
     lower_generator_info = np.array([
         [0,      0.6,    0,       0.3,      0.3,       16],
         [3,      0.4,    0,       0.2,      0.2,       18],
-        [4,      0.4,    0.1,     0.2,      0.2,       11]
+        [4,      0.4,    0,     0.2,      0.2,       11]
     ])
 
     # bus
@@ -31,7 +31,7 @@ def get_config():
          738,  957,  1246, 1619, 1832, 1749, 1628, 1990, 2121, 1978, 1738, 1510],
         [1442, 1190, 1089, 1203, 929,  543,  361,  318,  360,  352,  467,  625,
          718,  937,  1226, 1599, 1812, 1729, 1608, 1970, 2101, 1958, 1718, 1490]
-    ]) / 1000
+    ]) / 1000 * 0
 
 
     # bus
@@ -47,7 +47,7 @@ def get_config():
 
     power_load_demand_total = np.array([
         2.625,  2.025, 2.37,  2.31,  2.325, 2.4,   2.595, 2.85,  3.075, 3.255, 3.42,  3.54,
-        3.63,   3.645, 3.72,  3.825, 3.84,  3.69,  3.675, 3.555, 3.555, 3.405, 3.015, 2.94, ])
+        3.63,   3.645, 3.72,  3.825, 3.84,  3.69,  3.675, 3.555, 3.555, 3.405, 3.015, 2.94, ])      *  0
 
     # Bus / total
     power_load_info = np.array([
@@ -111,7 +111,7 @@ def get_config():
 
     upper_chp_info = np.array([
         # node         Hmin(MW)      Hmax(MW)       efficiency    Gen              Cost($ / MW)    Tsmin         Tsmax
-        # a0           a1            a2             a3            a4               a5              Ramp down      Ramp up    heater     bid_power      bid_heat
+        # a0           a1            a2             a3            a4               a5              heater     bid_power      bid_heat
         [
           2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.031 * 0.6,      0,          1,              1],
         [
@@ -168,12 +168,12 @@ def get_config():
 
     heat_network_node = np.array([
     #   node      Tsmin       Tsmax       Trmin     Trmax
-        [0,        0 ,       120000,        0,       800000],
-        [1,        0,        120000,        0,       800000],
-        [2,        0,        120000,        0,       800000],
-        [3,        0,        120000,        0,       800000],
-        [4,        0,        120000,        0,       800000],
-        [5,        0,        120000,        0,       800000],
+        [0,        0 ,         1000,        0,       1000],
+        [1,        0,          1000,        0,       1000],
+        [2,        0,          1000,        0,       1000],
+        [3,        0,          1000,        0,       1000],
+        [4,        0,          1000,        0,       1000],
+        [5,        0,          1000,        0,       1000],
     ])
 
 
@@ -193,7 +193,7 @@ def get_config():
     heat_load = np.array([
         50,          50,          48.06451613, 49.03225806, 49.03225806, 49.03225806, 48.06451613, 47.09677419,
         45.16129032, 44.19354839, 43.22580645, 42.25806452, 41.29032258, 41.29032258, 41.29032258, 42.25806452,
-        43.22580645, 44.19354839, 44.19354839, 44.19354839, 45.16129032, 46.12903226, 47.09677419, 47.09677419]) *0
+        43.22580645, 44.19354839, 44.19354839, 44.19354839, 45.16129032, 46.12903226, 47.09677419, 47.09677419]) * 0
 
     Heat_load_T0 = np.array([-10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10, -10,
                     -10, -10, -10])
@@ -225,14 +225,14 @@ def get_config():
         'lower_chp_connection_heater_index': lower_chp_info[:, 6],
         'heater_connection_index': heater_info[:, 0].astype(np.int64),
         'exchanger_connection_index': exchanger_info[:, 0].astype(np.int64),
-        'heater_tempe_supply_max': heat_network_node[heater_info[:, 0].astype(np.int), 1].tolist(),
-        'heater_tempe_supply_min': heat_network_node[heater_info[:, 0].astype(np.int), 2].tolist(),
-        'heater_tempe_return_max': heat_network_node[heater_info[:, 0].astype(np.int), 3].tolist(),
-        'heater_tempe_return_min': heat_network_node[heater_info[:, 0].astype(np.int), 4].tolist(),
-        'exchanger_tempe_supply_max': heat_network_node[exchanger_info[:, 0].astype(np.int), 1].tolist(),
-        'exchanger_tempe_supply_min': heat_network_node[exchanger_info[:, 0].astype(np.int), 2].tolist(),
-        'exchanger_tempe_return_max': heat_network_node[exchanger_info[:, 0].astype(np.int), 3].tolist(),
-        'exchanger_tempe_return_min': heat_network_node[exchanger_info[:, 0].astype(np.int), 4].tolist(),
+        'heater_tempe_supply_min': heat_network_node[heater_info[:, 0].astype(np.int), 1].tolist(),
+        'heater_tempe_supply_max': heat_network_node[heater_info[:, 0].astype(np.int), 2].tolist(),
+        'heater_tempe_return_min': heat_network_node[heater_info[:, 0].astype(np.int), 3].tolist(),
+        'heater_tempe_return_max': heat_network_node[heater_info[:, 0].astype(np.int), 4].tolist(),
+        'exchanger_tempe_supply_min': heat_network_node[exchanger_info[:, 0].astype(np.int), 1].tolist(),
+        'exchanger_tempe_supply_max': heat_network_node[exchanger_info[:, 0].astype(np.int), 2].tolist(),
+        'exchanger_tempe_return_min': heat_network_node[exchanger_info[:, 0].astype(np.int), 3].tolist(),
+        'exchanger_tempe_return_max': heat_network_node[exchanger_info[:, 0].astype(np.int), 4].tolist(),
 
         'load' : exchanger_info[:, 1].reshape((-1, 1)).dot(heat_load.reshape((1, -1))),
 

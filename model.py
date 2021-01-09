@@ -158,7 +158,7 @@ class OneLayer:
         self.heat_pipe_end_tempe_return = None
         self.upper_chp_point = None
         self.lower_chp_point = None
-        self.dual_expression = None
+        self.dual_expression = 0
         self.lower_objective = None
         self.upper_objective = None
         self.dual_node_power_balance = None
@@ -289,7 +289,7 @@ class OneLayer:
         for gen in range(self.generator_lower_num):
             for t in range(T):
                 cons_expr1 = self.lower_generator_power_output[gen, t] - self.generator_lower_min[gen]
-                cons_expr2 = -1 * self.lower_generator_power_output[gen, t] - self.generator_lower_max[gen]
+                cons_expr2 = -1 * self.lower_generator_power_output[gen, t] + self.generator_lower_max[gen]
                 self.dual_lower_generator_power_output_min[gen, t], expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_generator_power_output_min' + str(t) + '_' + str(gen))
                 self.dual_lower_generator_power_output_max[gen, t], expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_generator_power_output_max' + str(t) + '_' + str(gen))
                 dual_expr.append(expr1)
@@ -331,8 +331,8 @@ class OneLayer:
                 dual_expr.append(expr3)
         for chp in range(self.chp_lower_num):
             for t in range(T):
-                cons_expr1 = (  (self.lower_chp_point[chp, :, t].reshape((1, -1))).dot(self.upper_chp_POWER[chp, :].reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t]
-                cons_expr2 = (  (self.lower_chp_point[chp, :, t].reshape((1, -1))).dot(self.upper_chp_HEAT[chp, :]. reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t]
+                cons_expr1 = (  (self.lower_chp_point[chp, :, t].reshape((1, -1))).dot(self.lower_chp_POWER[chp, :].reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t]
+                cons_expr2 = (  (self.lower_chp_point[chp, :, t].reshape((1, -1))).dot(self.lower_chp_HEAT[chp, :]. reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t]
                 cons_expr3 = sum(self.lower_chp_point[chp, :, t]) - 1
                 _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_lower_chp_power_output_' + str(t) + '_' + str(chp))
                 _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_lower_chp_heat_output_' + str(t) + '_' + str(chp))
@@ -430,7 +430,7 @@ class OneLayer:
                 dual_expr.append(expr2)
                 dual_expr.append(expr3)
                 dual_expr.append(expr4)
-        #
+
         for exchanger in range(self.heat_exchanger_num):
             for t in range(T):
                 cons_expr1 = self.heat_node_tempe_supply[self.exchanger_connection_index[exchanger], t] - self.exchanger_tempe_supply_min[exchanger]
