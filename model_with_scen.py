@@ -584,7 +584,8 @@ class OneLayer:
         value_generator_quoted_price = to_value(self.upper_generator_quoted_price_tuple_dict)
         value_chp_power_quoted_price = to_value(self.upper_chp_power_quoted_price_tuple_dict)
         value_chp_heat_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
-        return value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price
+        obj_k = np.array([obj.getValue() for obj in self.obj_k])
+        return value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k
 
 
 def go():

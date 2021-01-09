@@ -77,8 +77,17 @@ import numpy as np
 def tonp(vars) -> np.array:
     keys = vars.keys()
     key_last = keys[-1]
-    dim = len(key_last)
-    shape = list(map(lambda x: x + 1, list(key_last)))
+    if type(key_last) != int:
+        dim = len(key_last)
+        shape = list(map(lambda x: x + 1, list(key_last)))
+    else:
+        dim = 1
+        shape = key_last + 1
+    if dim == 1:
+        re = np.empty(tuple([shape, ]), dtype=object)
+        for i in range(shape):
+            re[i] = vars[i]
+        return re
     if dim == 2:
         re = np.empty(tuple(shape), dtype=object)
         for i in range(shape[0]):
@@ -114,10 +123,17 @@ def tonp(vars) -> np.array:
 def to_value(vars):
     keys = vars.keys()
     key_last = keys[-1]
-    dim = len(key_last)
-    shape = list(map(lambda x: x + 1, list(key_last)))
+    if type(key_last) != int:
+        dim = len(key_last)
+        shape = list(map(lambda x: x + 1, list(key_last)))
+    else:
+        dim = 1
+        shape = key_last + 1
     if dim == 1:
-        assert 0
+        re = np.empty(tuple([shape, ]), dtype=object)
+        for i in range(shape):
+            re[i] = vars[i].getAttr('X')
+        return re
     if dim == 2:
         re = np.empty(tuple(shape), dtype=object)
         for i in range(shape[0]):

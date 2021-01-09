@@ -1,6 +1,9 @@
 import numpy as np
 T = 5
 K = 5
+empirical_distribution = [0.2] * 5
+confidence_level = 0.1
+
 
 def get_config():
     #   Bus     P_max   P_min   Ramp_up   Ramp_down   Cost    bid_max
