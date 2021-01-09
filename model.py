@@ -3,7 +3,6 @@ from config2 import get_config
 from config import T
 
 
-
 class OneLayer:
     def __init__(self, power_system, heat_system, chp_system):
         # ------------ Power System----------------
@@ -236,6 +235,8 @@ class OneLayer:
         self.dual_exchanger_return_min = np.empty((self.heat_exchanger_num, T), dtype=object)
         self.dual_exchanger_return_max = np.empty((self.heat_exchanger_num, T), dtype=object)
 
+        self.all_lower_level_vars.extend(self.upper_chp_point.flatten().tolist())
+        self.all_lower_level_vars.extend(self.lower_chp_point.flatten().tolist())
         self.all_lower_level_vars.extend(self.upper_chp_heat_output.flatten().tolist())
         self.all_lower_level_vars.extend(self.upper_chp_power_output.flatten().tolist())
         self.all_lower_level_vars.extend(self.lower_chp_heat_output.flatten().tolist())
@@ -333,10 +334,10 @@ class OneLayer:
             for t in range(T):
                 cons_expr1 = (  (self.lower_chp_point[chp, :, t].reshape((1, -1))).dot(self.lower_chp_POWER[chp, :].reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t]
                 cons_expr2 = (  (self.lower_chp_point[chp, :, t].reshape((1, -1))).dot(self.lower_chp_HEAT[chp, :]. reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t]
-                cons_expr3 = sum(self.lower_chp_point[chp, :, t]) - 1
+                cons_expr3 = -1 * sum(self.lower_chp_point[chp, :, t]) + 1
                 _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_lower_chp_power_output_' + str(t) + '_' + str(chp))
                 _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_lower_chp_heat_output_' + str(t) + '_' + str(chp))
-                self.dual_lower_chp_point_sum_one[chp, t], expr3 = Complementary_equal(cons_expr3, self.model, 'dual_lower_chp_point_sum_one' + str(t) + '_' + str(chp))
+                self.dual_lower_chp_point_sum_one[chp, t], expr3 = Complementary_great(cons_expr3, self.model, 'dual_lower_chp_point_sum_one' + str(t) + '_' + str(chp))
                 dual_expr.append(expr1)
                 dual_expr.append(expr2)
                 dual_expr.append(expr3)
@@ -509,18 +510,18 @@ class OneLayer:
 
         for load in range(self.ele_load_num):
             for t in range(T):
-                objs.append(self.dual_node_power_balance[self.ele_load_index[load], t] * self.ele_load[load, t])
+                objs.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t] * self.ele_load[load, t])
 
         for chp in range(self.heat_heater_num):
             for t in range(T):
                 objs.append(-1 * self.dual_heater_supply_min[chp, t] * self.heater_tempe_supply_min[chp])
                 objs.append(self.dual_heater_supply_max[chp, t] * self.heater_tempe_supply_max[chp])
 
-        for heater in range(self.heat_exchanger_num):
+        for exchanger in range(self.heat_exchanger_num):
             for t in range(T):
-                objs.append(-1 * self.dual_exchanger_return_min[heater, t] * self.exchanger_tempe_return_min[heater])
-                objs.append(self.dual_exchanger_return_max[heater, t] * self.exchanger_tempe_return_max[heater])
-                objs.append(self.dual_exchanger_balance[heater, t]  * self.heat_load[heater, t])
+                objs.append(-1 * self.dual_exchanger_return_min[exchanger, t] * self.exchanger_tempe_return_min[exchanger])
+                objs.append(self.dual_exchanger_return_max[exchanger, t] * self.exchanger_tempe_return_max[exchanger])
+                objs.append(self.dual_exchanger_balance[exchanger, t]  * self.heat_load[exchanger, t])
 
         for chp in range(self.chp_upper_num):
             for t in range(T):
@@ -544,11 +545,10 @@ class OneLayer:
             for t in range(T):
                 for point in range(self.chp_point_num):
                     objs.append(self.dual_lower_chp_point_less_one[chp, point, t])
-                objs.append(self.dual_lower_chp_point_sum_one[chp, t])
+                objs.append(-1 * self.dual_lower_chp_point_sum_one[chp, t])
 
         self.upper_objective = sum(objs)
         self.model.setObjective(self.upper_objective)
-        self.model.setObjective(0)
 
     def optimize_model(self):
         self.model.optimize()
