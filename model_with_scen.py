@@ -1,5 +1,5 @@
 from utility import *
-from config2 import get_config, T, K
+from config2 import T, K
 
 
 class OneLayer:
@@ -354,7 +354,7 @@ class OneLayer:
             for t in range(T):
                 for k in range(K):
                     cons_expr1 = (  (self.lower_chp_point[chp, :, t, k].reshape((1, -1))).dot(self.lower_chp_POWER[chp, :].reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t, k]
-                    cons_expr2 = (  (self.lower_chp_point[chp, :, t, k].reshape((1, -1))).dot(self.lower_chp_HEAT[chp, :]. reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t, k]
+                    cons_expr2 = (  (self.lower_chp_point[chp, :, t, k].reshape((1, -1))).dot(self.lower_chp_HEAT[chp, :]. reshape((-1, 1)))   )[0][0] - self.lower_chp_heat_output[chp, t, k]
                     cons_expr3 = -1 * sum(self.lower_chp_point[chp, :, t, k]) + 1
                     _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_lower_chp_power_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
                     _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_lower_chp_heat_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
@@ -391,7 +391,7 @@ class OneLayer:
                     cons_expr1 = \
                         sum(sum(self.upper_chp_heat_output[np.where(self.upper_chp_connection_heater_index == heater), t, k] )) + \
                         sum(sum(self.lower_chp_heat_output[np.where(self.lower_chp_connection_heater_index == heater), t, k] )) - \
-                        sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_start_node_supply == self.heater_connection_index[heater])]) * \
+                        0.1 * sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_start_node_supply == self.heater_connection_index[heater])]) * \
                         (self.heat_node_tempe_supply[self.heater_connection_index[heater], t, k] -
                          self.heat_node_tempe_return[self.heater_connection_index[heater], t, k])
                     _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_heater_balance' + str(t) + '_' + str(heater) + 'scenario' + str(k))
@@ -401,7 +401,7 @@ class OneLayer:
             for t in range(T):
                 for k in range(K):
                     cons_expr1 = self.heat_load[exchanger, t] - \
-                                 sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_end_node_supply == self.exchanger_connection_index[exchanger])]) * \
+                                 0.1 * sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_end_node_supply == self.exchanger_connection_index[exchanger])]) * \
                                  (self.heat_node_tempe_supply[self.exchanger_connection_index[exchanger], t, k] -
                                   self.heat_node_tempe_return[self.exchanger_connection_index[exchanger], t, k])
                     self.dual_exchanger_balance[exchanger, t], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_exchanger_balance' + str(t) + '_' + str(exchanger))
@@ -480,7 +480,7 @@ class OneLayer:
         self.dual_expression = self.dual_expression + sum(dual_expr)
 
     def build_gas_system_original_and_dual_constrains(self):
-        print(self.model)
+        self.do_nothing = 1
 
     def build_lower_objective(self):
         lower_objs = []
@@ -550,7 +550,7 @@ class OneLayer:
                 for t in range(T):
                     objs.append(self.generator_upper_cost[gen] * self.upper_generator_power_output[gen, t, k])
 
-            for gen in range(self.generator_lower_num):   # 边际收益
+            for gen in range(self.generator_lower_num):
                 for t in range(T - 1):
                     objs.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
                     objs.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])

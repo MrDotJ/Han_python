@@ -27,7 +27,7 @@ def do_main():
         value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k = \
             first_layer.optimize(distribution)
         worst_distribution = second_layer.optimize(obj_k)
-        distribution = (alpha) * np.array(distribution) + (1-alpha) * np.array(worst_distribution)
+        distribution = alpha * np.array(distribution) + (1 - alpha) * np.array(worst_distribution)
 
 
 if __name__ == '__main__':

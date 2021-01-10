@@ -1,4 +1,5 @@
 import gurobipy as gurobi
+import numpy as np
 
 M = 1e6
 
@@ -71,11 +72,8 @@ def Complementary_equal(expr, model, dual_var_name):
     return var_dual, expr * var_dual
 
 
-import numpy as np
-
-
-def tonp(vars) -> np.array:
-    keys = vars.keys()
+def tonp(vars_gur) -> np.array:
+    keys = vars_gur.keys()
     key_last = keys[-1]
     if type(key_last) != int:
         dim = len(key_last)
@@ -86,20 +84,20 @@ def tonp(vars) -> np.array:
     if dim == 1:
         re = np.empty(tuple([shape, ]), dtype=object)
         for i in range(shape):
-            re[i] = vars[i]
+            re[i] = vars_gur[i]
         return re
     if dim == 2:
         re = np.empty(tuple(shape), dtype=object)
         for i in range(shape[0]):
             for j in range(shape[1]):
-                re[i, j] = vars[i, j]
+                re[i, j] = vars_gur[i, j]
         return re
     if dim == 3:
         re = np.empty(shape, dtype=object)
         for i in range(shape[0]):
             for j in range(shape[1]):
                 for k in range(shape[2]):
-                    re[i, j, k] = vars[i, j, k]
+                    re[i, j, k] = vars_gur[i, j, k]
         return re
     if dim == 4:
         re = np.empty(shape, dtype=object)
@@ -107,7 +105,7 @@ def tonp(vars) -> np.array:
             for j in range(shape[1]):
                 for k in range(shape[2]):
                     for m in range(shape[3]):
-                        re[i, j, k, m] = vars[i, j, k, m]
+                        re[i, j, k, m] = vars_gur[i, j, k, m]
         return re
     if dim == 5:
         re = np.empty(shape, dtype=object)
@@ -116,12 +114,12 @@ def tonp(vars) -> np.array:
                 for k in range(shape[2]):
                     for m in range(shape[3]):
                         for n in range(shape[4]):
-                            re[i, j, k, m, n] = vars[i, j, k, m, n]
+                            re[i, j, k, m, n] = vars_gur[i, j, k, m, n]
         return re
 
 
-def to_value(vars):
-    keys = vars.keys()
+def to_value(vars_gur):
+    keys = vars_gur.keys()
     key_last = keys[-1]
     if type(key_last) != int:
         dim = len(key_last)
@@ -132,20 +130,20 @@ def to_value(vars):
     if dim == 1:
         re = np.empty(tuple([shape, ]), dtype=object)
         for i in range(shape):
-            re[i] = vars[i].getAttr('X')
+            re[i] = vars_gur[i].getAttr('X')
         return re
     if dim == 2:
         re = np.empty(tuple(shape), dtype=object)
         for i in range(shape[0]):
             for j in range(shape[1]):
-                re[i, j] = vars[i, j].getAttr('X')
+                re[i, j] = vars_gur[i, j].getAttr('X')
         return re
     if dim == 3:
         re = np.empty(shape, dtype=object)
         for i in range(shape[0]):
             for j in range(shape[1]):
                 for k in range(shape[2]):
-                    re[i, j, k] = vars[i, j, k].getAttr('X')
+                    re[i, j, k] = vars_gur[i, j, k].getAttr('X')
         return re
     if dim == 4:
         re = np.empty(shape, dtype=object)
@@ -153,7 +151,7 @@ def to_value(vars):
             for j in range(shape[1]):
                 for k in range(shape[2]):
                     for m in range(shape[3]):
-                        re[i, j, k, m] = vars[i, j, k, m].getAttr('X')
+                        re[i, j, k, m] = vars_gur[i, j, k, m].getAttr('X')
         return re
     if dim == 5:
         re = np.empty(shape, dtype=object)
@@ -162,5 +160,5 @@ def to_value(vars):
                 for k in range(shape[2]):
                     for m in range(shape[3]):
                         for n in range(shape[4]):
-                            re[i, j, k, m, n] = vars[i, j, k, m, n].getAttr('X')
+                            re[i, j, k, m, n] = vars_gur[i, j, k, m, n].getAttr('X')
         return re
