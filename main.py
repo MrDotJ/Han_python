@@ -23,7 +23,7 @@ def do_main():
 
     distribution = empirical_distribution
     alpha = 0.6
-    while 1:
+    if 1:
         value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k = \
             first_layer.optimize(distribution)
         worst_distribution = second_layer.optimize(obj_k)

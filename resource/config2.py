@@ -1,8 +1,8 @@
 import numpy as np
-T = 5
-K = 5
-empirical_distribution = [0.2] * 5
-confidence_level = 0.1
+T = 1
+K = 1
+empirical_distribution = [1/K] * K
+confidence_level = 0.2
 
 
 def get_config():
@@ -10,19 +10,14 @@ def get_config():
     upper_generator_info = np.array([
         [0,      1.1,    0,       0.3,      0.3,       10,      20],
         [3,      0.3,    0,       0.1,      0.1,       17,      34],
-        [2,      0.4,    0,    0.1,      0.1,       10,      20],
-        [4,      0.4,    0,    0.1,      0.1,       10,      20],
+        [2,      0.4,    0,       0.1,      0.1,       10,      20],
+        [4,      0.4,    0,       0.1,      0.1,       10,      20],
     ])
 
     lower_generator_info = np.array([
         [0,      0.6,    0,       0.3,      0.3,       16],
         [3,      0.4,    0,       0.2,      0.2,       18],
-        [4,      0.4,    0,     0.2,      0.2,       11]
-    ])
-
-    # bus
-    wind_connection_index = np.array([
-        3,
+        [4,      0.4,    0,       0.2,      0.2,       11]
     ])
 
     wind_output = np.array([
@@ -38,7 +33,7 @@ def get_config():
             [1442, 1190, 1089, 1203, 929, 543, 361, 318, 360, 352, 467, 625,
              718, 937, 1226, 1599, 1812, 1729, 1608, 1970, 2101, 1958, 1718, 1490]
         ]
-    ]) / 1000 * 0
+    ]) / 1000 * 0.
 
 
     # bus
@@ -54,7 +49,7 @@ def get_config():
 
     power_load_demand_total = np.array([
         2.625,  2.025, 2.37,  2.31,  2.325, 2.4,   2.595, 2.85,  3.075, 3.255, 3.42,  3.54,
-        3.63,   3.645, 3.72,  3.825, 3.84,  3.69,  3.675, 3.555, 3.555, 3.405, 3.015, 2.94, ])      *  0.1
+        3.63,   3.645, 3.72,  3.825, 3.84,  3.69,  3.675, 3.555, 3.555, 3.405, 3.015, 2.94, ])      *  0.5
 
     # Bus / total
     power_load_info = np.array([
@@ -65,28 +60,28 @@ def get_config():
 
     # Beginning node   Terminal node   Impedance   Line Capacity
     power_line_info = np.array([
-        [0,                   1,         0.0281,         2.0],
+        [0,                   1,         0.0281,         2.9],
         [0,                   3,         0.0304,         2.9],
-        [0,                   4,         0.0064,         1.9],
+        [0,                   4,         0.0064,         3.9],
         [1,                   2,         0.0108,         2.9],
         [2,                   3,         0.0297,         4.1],
         [3,                   4,         0.0297,         2.0],
     ])
 
-    ##       0         1       2
+    ##       0       1d       2d
     #        o--------o--------o
     #        | \_____________  |
     #      4 |               \ |
-    #        o--------------- o 3
+    #        o--------------- o 3d
     # #
 
     power_system = {
-        'node_num': int(np.max([np.max(power_line_info[:, 0]), np.max(power_line_info[:, 1])])),
+        'node_num': int(np.max([np.max(power_line_info[:, 0]), np.max(power_line_info[:, 1])])) + 1,
         'line_num': len(power_line_info),
         'line_capacity': power_line_info[:, 3].tolist(),
         'reactance': power_line_info[:, 2].tolist(),
-        'line_start': power_line_info[:, 0],
-        'line_end': power_line_info[:, 1],
+        'line_start': power_line_info[:, 0].astype(np.int),
+        'line_end': power_line_info[:, 1].astype(np.int),
 
         'upper_generator_connection_index': upper_generator_info[:, 0],
         'upper_generator_num': len(upper_generator_info),
@@ -122,12 +117,12 @@ def get_config():
         [
           2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.031 * 0.6,      0,          1,              1],
         [
-          10 / 1e3,    14.5 / 1e3,   0.0345 / 1e3,  4.2 / 1e4,    0.027 / 1e4,     0.021 / 1e4,      0,          1,              1]
+          2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.031 * 0.6,      0,          1,              1]
     ])
 
     lower_chp_info = np.array([
         [
-         15,           36,           0.0435,        6,            0.03,            0.031,            0],
+         2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.031 * 0.6,            0],
     ])
 
     upper_chp_POWER = np.array([

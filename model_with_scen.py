@@ -179,14 +179,14 @@ class OneLayer:
         self.do_nothing                                     = 0
 
     def build_power_system(self):
-        self.upper_generator_quoted_price_tuple_dict      = self.model.addVars(self.generator_upper_num, T, lb=0, ub=self.upper_generator_quoted_price_max,       name='upper_generator_quoted_price')
-        self.upper_chp_power_quoted_price_tuple_dict      = self.model.addVars(self.chp_upper_num,       T, lb=0, ub=self.upper_chp_power_quoted_price_max,       name='upper_chp_power_quoted_price')
-        self.upper_generator_quoted_price                 = tonp( self.upper_generator_quoted_price_tuple_dict  )
-        self.upper_chp_power_quoted_price                 = tonp( self.upper_chp_power_quoted_price_tuple_dict  )
-        self.upper_generator_power_output                 = tonp( self.model.addVars(self.generator_upper_num, T, K,  name='upper_generator_power')                                                 )
-        self.lower_generator_power_output                 = tonp( self.model.addVars(self.generator_lower_num, T, K,  name='lower_generator_power')                                                 )
-        self.line_power_flow                              = tonp( self.model.addVars(self.ele_line_num,        T, K,  name='line_power_flow')                                                       )
-        self.bus_angle                                    = tonp( self.model.addVars(self.ele_node_num,        T, K,  name='bus_angle')                                                             )
+        self.upper_generator_quoted_price_tuple_dict      = self.model.addVars(self.generator_upper_num, T, lb=0,                       name='upper_generator_quoted_price')
+        self.upper_chp_power_quoted_price_tuple_dict      = self.model.addVars(self.chp_upper_num,       T, lb=0,                       name='upper_chp_power_quoted_price')
+        self.upper_generator_quoted_price                 = tonp( self.upper_generator_quoted_price_tuple_dict                                                             )
+        self.upper_chp_power_quoted_price                 = tonp( self.upper_chp_power_quoted_price_tuple_dict                                                             )
+        self.upper_generator_power_output                 = tonp( self.model.addVars(self.generator_upper_num, T, K,                    name='upper_generator_power'       )                                                 )
+        self.lower_generator_power_output                 = tonp( self.model.addVars(self.generator_lower_num, T, K,                    name='lower_generator_power'       )                                                 )
+        self.line_power_flow                              = tonp( self.model.addVars(self.ele_line_num,        T, K, lb=-1 * 10, ub=10, name='line_power_flow'             )                                                       )
+        self.bus_angle                                    = tonp( self.model.addVars(self.ele_node_num,        T, K, lb=-1 * 10, ub=10, name='bus_angle'                   )                                                             )
 
         self.dual_node_power_balance                      = np.empty((self.ele_node_num,        T,   K, ), dtype=object)
         self.dual_line_power_flow_great                   = np.empty((self.ele_line_num,        T,   K, ), dtype=object)
@@ -214,7 +214,7 @@ class OneLayer:
         self.do_nothing = 1
 
     def build_heat_system(self):
-        self.upper_chp_heat_quoted_price_tuple_dict = self.model.addVars(self.chp_upper_num, T, lb=0, ub=(np.array(self.upper_chp_heat_quoted_price_max) * 2).tolist(), name='upper_chp_heat_quoted_price')
+        self.upper_chp_heat_quoted_price_tuple_dict = self.model.addVars(self.chp_upper_num, T, lb=0, name='upper_chp_heat_quoted_price')
         self.upper_chp_heat_quoted_price            = tonp( self.upper_chp_heat_quoted_price_tuple_dict )
 
         self.upper_chp_point                    = tonp( self.model.addVars(self.chp_upper_num, self.chp_point_num, T, K, name= 'upper_chp_point')        )
@@ -269,6 +269,14 @@ class OneLayer:
                     self.dual_node_power_balance[node, t], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_power_balance_' + str(t) + '_' + str(node) + '_' + 'scenario' + str(k))
                     dual_expr.append(expr1)
 
+        for line in range(self.ele_line_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = (self.bus_angle[self.ele_line_start[line], t, k] -
+                                  self.bus_angle[self.ele_line_end[line], t, k]) / self.line_reactance[line] - \
+                                 self.line_power_flow[line, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_angle_line_' + str(t) + 'line' + str(line) + 'scenario' + str(k))
+                    dual_expr.append(expr1)
         for t in range(T):
             for k in range(K):
                 cons_expr1 = self.bus_angle[2, t, k]
@@ -508,7 +516,31 @@ class OneLayer:
             my_expr.addConstr(expr, self.model)
 
     def build_upper_constraints(self):
-        self.do_nothing = 1
+        for gen in range(self.generator_upper_num):
+            for t in range(T):
+                self.model.addConstr(
+                   lhs = self.upper_generator_quoted_price_tuple_dict[gen, t],
+                   rhs=self.upper_generator_quoted_price_max[gen][t],
+                   sense=gurobi.GRB.LESS_EQUAL,
+                   name='upper_generator_quoted_price_max_time' + str(t) + 'gen_' + str(gen))
+
+        for chp in range(self.chp_upper_num):
+            for t in range(T):
+                self.model.addConstr(
+                   lhs= self.upper_chp_power_quoted_price_tuple_dict[chp, t],
+                   rhs= self.upper_chp_power_quoted_price_max[chp][t],
+                   sense= gurobi.GRB.LESS_EQUAL,
+                   name='upper_chp_power_quoted_price_max' + str(t) + 'chp_' + str(chp)
+                )
+
+        for chp in range(self.chp_upper_num):
+            for t in range(T):
+                self.model.addConstr(
+                    lhs=self.upper_chp_heat_quoted_price_tuple_dict[chp, t],
+                    rhs=self.upper_chp_heat_quoted_price_max[chp][t],
+                    sense=gurobi.GRB.LESS_EQUAL,
+                    name= 'upper_chp_heat_quoted_price_max' + str(t) + 'chp_' + str(chp)
+                )
 
     def build_upper_objective(self):
         obj_k = []
@@ -586,28 +618,3 @@ class OneLayer:
         value_chp_heat_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
         obj_k = np.array([obj.getValue() for obj in self.obj_k])
         return value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k
-
-
-def go():
-    power_system, heat_system, chp_system = get_config()
-    one_layer = OneLayer(power_system, heat_system, chp_system)
-
-    one_layer.build_power_system()
-    one_layer.build_heat_system()
-    one_layer.build_gas_system()
-
-    one_layer.build_power_system_original_and_dual_constraints()
-    one_layer.build_gas_system_original_and_dual_constrains()
-    one_layer.build_heat_system_original_and_dual_constraints()
-
-    one_layer.build_lower_objective()
-    one_layer.build_kkt_derivative_constraints()
-
-    one_layer.build_upper_constraints()
-    one_layer.build_upper_objective()
-    value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price = one_layer.optimize([0.2] * 5)
-    return value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price
-
-
-if __name__ == '__main__':
-    go()

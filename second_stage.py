@@ -23,10 +23,3 @@ class SecondLayer:
         self.model.setObjective((self.distribution.reshape((1, -1)).dot(np.array(obj_k).reshape((-1, 1))))[0][0])
         self.model.optimize()
         return to_value(self.distribution_tuple_list)
-
-
-if __name__ ==  '__main__':
-    layer = SecondLayer([0.2] * 5, 0.2)
-    layer.bulid_base_model()
-    result = layer.optimize([1] * 5)
-    print(result)
