@@ -24,8 +24,10 @@ def do_main():
     distribution = empirical_distribution
     alpha = 0.6
     if 1:
+        print('first stage')
         value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k = \
             first_layer.optimize(distribution)
+        print('second stage')
         worst_distribution = second_layer.optimize(obj_k)
         distribution = alpha * np.array(distribution) + (1 - alpha) * np.array(worst_distribution)
 
