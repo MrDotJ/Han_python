@@ -1,9 +1,10 @@
-from resource.utility import *
-from resource.config2 import T, K
+from utility import *
+from config2 import T, K
+from math import sqrt
 
 
 class OneLayer:
-    def __init__(self, power_system, heat_system, chp_system):
+    def __init__(self, power_system, heat_system, chp_system, gas_system):
         # ------------ Power System----------------
         self.ele_node_num                       = power_system['node_num']
         self.ele_line_num                       = power_system['line_num']
@@ -49,8 +50,6 @@ class OneLayer:
         self.heat_heater_num                    = heat_system['heater_num']
         self.heat_exchanger_num                 = heat_system['exchanger_num']
 
-        self.upper_chp_connection_heater_index  = heat_system['upper_chp_connection_heater_index']
-        self.lower_chp_connection_heater_index  = heat_system['lower_chp_connection_heater_index']
 
         self.heater_connection_index            = heat_system['heater_connection_index']          # same with supply and return
         self.exchanger_connection_index         = heat_system['exchanger_connection_index']
@@ -64,9 +63,6 @@ class OneLayer:
         self.exchanger_tempe_supply_min         = heat_system['exchanger_tempe_supply_min']
         self.exchanger_tempe_return_max         = heat_system['exchanger_tempe_return_max']
         self.exchanger_tempe_return_min         = heat_system['exchanger_tempe_return_min']
-
-        self.chp_upper_connection_power_index   = heat_system['chp_upper_connection_power_index']
-        self.chp_lower_connection_power_index   = heat_system['chp_lower_connection_power_index']
 
         self.heat_load                          = heat_system['load']
 
@@ -94,38 +90,58 @@ class OneLayer:
         self.chp_lower_coeff_cross              = chp_system['chp_lower_coeff_cross']
         self.chp_lower_coeff_const              = chp_system['chp_lower_coeff_const']
 
+        self.chp_upper_connection_power_index   = power_system['chp_upper_connection_power_index']
+        self.chp_lower_connection_power_index   = power_system['chp_lower_connection_power_index']
+        self.chp_upper_connection_heater_index  = heat_system['chp_upper_connection_heater_index']
+        self.chp_lower_connection_heater_index  = heat_system['chp_lower_connection_heater_index']
+        self.chp_upper_connection_gas_index     = gas_system['chp_upper_connection_gas_index']
+        self.chp_lower_connection_gas_index     = gas_system['chp_lower_connection_gas_index']
+
         # ------------ Gas System----------------
-        # self.well_upper_num = gas_system['well_upper_num']
-        # self.well_lower_num = gas_system['well_lower_num']
-        # self.well_upper_quoted_price_max = gas_system['well_upper_quoted_price_max']
-        #
-        # self.well_upper_output_price = gas_system['well_upper_output_price']
-        # self.well_lower_output_price = gas_system['well_lower_output_price']
-        # self.well_upper_output_max = gas_system['well_upper_output_max']
-        # self.well_upper_output_min = gas_system['well_upper_output_min']
-        # self.well_lower_output_max = gas_system['well_lower_output_max']
-        # self.well_lower_output_min = gas_system['well_lower_output_min']
-        #
-        # self.gas_node_num = gas_system['gas_node_num']
-        #
-        # self.gas_line_num = gas_system['gas_line_num']  # without compress
-        # self.gas_weymouth = gas_system['weymouth']
-        # self.gas_linepack = gas_system['gas_linepack']
-        #
-        # self.gas_compressor_num = gas_system['gas_compressor_num']
-        #
-        # self.gas_load_num = gas_system['gas_load_num']
+        self.well_upper_num = gas_system['well_upper_num']
+        self.well_lower_num = gas_system['well_lower_num']
+        self.well_upper_quoted_price_max = gas_system['well_upper_quoted_price_max']
+        self.well_upper_connection_index = gas_system['well_upper_connection_index']
+        self.well_lower_connection_index = gas_system['well_lower_connection_index']
+        
+        self.well_upper_output_price = gas_system['well_upper_output_price']
+        self.well_lower_output_price = gas_system['well_lower_output_price']
+        self.well_upper_output_max = gas_system['well_upper_output_max']
+        self.well_upper_output_min = gas_system['well_upper_output_min']
+        self.well_lower_output_max = gas_system['well_lower_output_max']
+        self.well_lower_output_min = gas_system['well_lower_output_min']
+        
+        self.gas_node_num = gas_system['gas_node_num']
+        self.gas_node_pressure_min = gas_system['gas_node_pressure_min']
+        self.gas_node_pressure_max = gas_system['gas_node_pressure_max']
+
+        self.gas_line_num = gas_system['gas_line_num']
+        self.gas_inactive_line_num = gas_system['gas_inactive_line_num']
+        self.gas_active_line_num = gas_system['gas_active_line_num']
+
+        self.gas_weymouth = gas_system['weymouth']
+        self.gas_linepack_coeff = gas_system['gas_linepack_coeff']
+        self.gas_pipe_start_node = gas_system['gas_pipe_start_node']
+        self.gas_pipe_end_node = gas_system['gas_pipe_end_node']
+
+        self.gas_compressor_num = gas_system['gas_compressor_num']
+        self.gas_compressor_coeff = gas_system['gas_compressor_coeff']
+        
+        self.gas_load_num = gas_system['gas_load_num']
+        self.gas_load = gas_system['gas_load']
+        self.gas_load_connection_index = gas_system['gas_load_connection_index']
+
 
         # model
         self.model = gurobi.Model()
         self.upper_generator_quoted_price                   = None
         self.upper_chp_power_quoted_price                   = None
         self.upper_chp_heat_quoted_price                    = None
+        self.upper_well_quoted_price                        = None
         self.upper_generator_quoted_price_tuple_dict        = None
         self.upper_chp_power_quoted_price_tuple_dict        = None
         self.upper_chp_heat_quoted_price_tuple_dict         = None
-        self.upper_chp_heat_quoted_price                    = None
-        self.well_upper_quoted_price                        = None
+        self.upper_well_quoted_price_tuple_dict             = None
 
         self.upper_generator_power_output                   = None
         self.lower_generator_power_output                   = None
@@ -139,12 +155,10 @@ class OneLayer:
         self.bus_angle                                      = None
         self.upper_gas_well_output                          = None
         self.lower_gas_well_output                          = None
-        self.gas_pressure                                   = None
+        self.gas_node_pressure                              = None
         self.gas_flow_in                                    = None
         self.gas_flow_out                                   = None
-        self.gas_linepack_var                               = None
-        self.gas_compressor_in                              = None
-        self.gas_compressor_out                             = None
+        self.gas_linepack                                   = None
         self.gas_storage_stock                              = None
         self.gas_storage_in                                 = None
         self.gas_storage_out                                = None
@@ -173,6 +187,11 @@ class OneLayer:
         self.dual_heater_supply_max                         = None
         self.dual_exchanger_return_min                      = None
         self.dual_exchanger_return_max                      = None
+        self.dual_gas_1                                     = None
+        self.dual_gas_2                                     = None
+        self.dual_gas_3                                     = None
+        self.upper_chp_cost_relax                           = None
+        self.lower_chp_cost_relax                           = None
 
         self.all_lower_level_vars                           = []
         self.obj_k                                          = []
@@ -202,23 +221,23 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.bus_angle.flatten().tolist())
 
     def build_gas_system(self):
-        # self.well_upper_quoted_price      = tonp( self.model.addVars(self.well_upper_num, T, lb=0, ub=self.well_upper_quoted_price_max, name='upper_gas_quoted_price') )
-        # self.upper_gas_well_output        = tonp( self.model.addVars(self.well_upper_num, T, name='upper_well_output')                                                                       )
-        # self.lower_gas_well_output        = tonp( self.model.addVars(self.well_lower_num, T, name='lower_well_output')                                                                       )
-        # self.gas_pressure                 = tonp( self.model.addVars(self.gas_node_num, T, name='gas_node_pressure')                                                                         )
-        # self.gas_flow_in                  = tonp( self.model.addVars(self.gas_line_num, T, name='gas_flow_in')                                                                               )
-        # self.gas_flow_out                 = tonp( self.model.addVars(self.gas_line_num, T, name='gas_flow_out')                                                                              )
-        # self.gas_linepack_var             = tonp( self.model.addVars(self.gas_line_num - self.gas_compressor_num, T, name='gas_linepack')                                                    )
-        # self.gas_compressor_in            = tonp( self.model.addVars(self.gas_compressor_num, T, name='gas_in_compressor')                                                                   )
-        # self.gas_compressor_out           = tonp( self.model.addVars(self.gas_compressor_num, T, name='gas_out_compressor')                                                                        )
+        self.upper_well_quoted_price_tuple_dict = self.model.addVars(self.well_upper_num, T, K, name='upper_gas_quoted_price')
+        self.upper_well_quoted_price            = tonp( self.upper_well_quoted_price_tuple_dict)
+
+        self.upper_gas_well_output        = tonp( self.model.addVars(self.well_upper_num, T, K, name='upper_well_output')                                                                       )
+        self.lower_gas_well_output        = tonp( self.model.addVars(self.well_lower_num, T, K, name='lower_well_output')                                                                       )
+        self.gas_node_pressure            = tonp( self.model.addVars(self.gas_node_num, T, K, name='gas_node_pressure')                                                                         )
+        self.gas_flow_in                  = tonp( self.model.addVars(self.gas_line_num, T, K, name='gas_flow_in')                                                                               )
+        self.gas_flow_out                 = tonp( self.model.addVars(self.gas_line_num, T, K, name='gas_flow_out')                                                                              )
+        self.gas_linepack                 = tonp( self.model.addVars(self.gas_inactive_line_num, T, K, name='gas_linepack')                                                                  )
         self.do_nothing = 1
 
     def build_heat_system(self):
         self.upper_chp_heat_quoted_price_tuple_dict = self.model.addVars(self.chp_upper_num, T, lb=0, name='upper_chp_heat_quoted_price')
         self.upper_chp_heat_quoted_price            = tonp( self.upper_chp_heat_quoted_price_tuple_dict )
 
-        self.upper_chp_point                    = tonp( self.model.addVars(self.chp_upper_num, self.chp_point_num, T, K, name= 'upper_chp_point')        )
-        self.lower_chp_point                    = tonp( self.model.addVars(self.chp_lower_num, self.chp_point_num, T, K, name= 'lower_chp_point')        )
+        self.upper_chp_point                    = tonp( self.model.addVars(self.chp_upper_num, self.chp_point_num, T, K, name='upper_chp_point')         )
+        self.lower_chp_point                    = tonp( self.model.addVars(self.chp_lower_num, self.chp_point_num, T, K, name='lower_chp_point')         )
         self.upper_chp_heat_output              = tonp( self.model.addVars(self.chp_upper_num, T, K, name='upper_chp_heat_output')                       )
         self.upper_chp_power_output             = tonp( self.model.addVars(self.chp_upper_num, T, K, name='upper_chp_power')                             )
         self.lower_chp_heat_output              = tonp( self.model.addVars(self.chp_lower_num, T, K, name='lower_chp_heat_output')                       )
@@ -389,8 +408,8 @@ class OneLayer:
             for t in range(T):
                 for k in range(K):
                     cons_expr1 = \
-                        sum(sum(self.upper_chp_heat_output[np.where(self.upper_chp_connection_heater_index == heater), t, k] )) + \
-                        sum(sum(self.lower_chp_heat_output[np.where(self.lower_chp_connection_heater_index == heater), t, k] )) - \
+                        sum(sum(self.upper_chp_heat_output[np.where(self.chp_upper_connection_heater_index == heater), t, k] )) + \
+                        sum(sum(self.lower_chp_heat_output[np.where(self.chp_lower_connection_heater_index == heater), t, k] )) - \
                         0.1 * sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_start_node_supply == self.heater_connection_index[heater])]) * \
                         (self.heat_node_tempe_supply[self.heater_connection_index[heater], t, k] -
                          self.heat_node_tempe_return[self.heater_connection_index[heater], t, k])
@@ -480,7 +499,158 @@ class OneLayer:
         self.dual_expression = self.dual_expression + sum(dual_expr)
 
     def build_gas_system_original_and_dual_constrains(self):
-        self.do_nothing = 1
+        dual_expr = []
+        for chp in range(self.chp_upper_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_epxr1 = self.hz4_upper[chp, t, k] - self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k] - self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k] + self.upper_chp_cost_relax[chp, t, k] - self.chp_upper_coeff_const[chp] - 1
+                    cons_epxr2 = -1 * self.hz5_upper[chp, t, k] - self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k] - self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k] + self.upper_chp_cost_relax[chp, t, k] - self.chp_upper_coeff_const[chp] + 1
+                    cons_epxr3 = self.hz6_upper[chp, t, k] - self.upper_chp_power_output[chp, t, k] - self.upper_chp_heat_output[chp, t, k]
+                    _, expr1 = Complementary_soc([2 * sqrt(self.chp_upper_coeff_p_2[chp]),
+                                       2 * sqrt(self.chp_upper_coeff_h_2[chp]),
+                                       2 * sqrt(self.chp_upper_coeff_cross[chp]),
+                                       1],
+                                      [self.upper_chp_power_output[chp, t, k],
+                                       self.upper_chp_heat_output[chp, t, k],
+                                       self.hz6_upper[chp, t, k],
+                                       self.hz4_upper[chp, t, k]],
+                                      [1],
+                                      [self.hz5_upper[chp, t, k]])
+                    dual_expr.append(expr1)
+
+        for chp in range(self.chp_lower_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_epxr1 = self.hz4_lower[chp, t, k] - self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k] - self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k] + self.lower_chp_cost_relax[chp, t, k] - self.chp_lower_coeff_const[chp] - 1
+                    cons_epxr2 = -1 * self.hz5_lower[chp, t, k] - self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k] - self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k] + self.lower_chp_cost_relax[chp, t, k] - self.chp_lower_coeff_const[chp] + 1
+                    cons_epxr3 = self.hz6_lower[chp, t, k] - self.lower_chp_power_output[chp, t, k] - self.lower_chp_heat_output[chp, t, k]
+                    _, expr1 = Complementary_soc([2 * sqrt(self.chp_lower_coeff_p_2[chp]),
+                                       2 * sqrt(self.chp_lower_coeff_h_2[chp]),
+                                       2 * sqrt(self.chp_lower_coeff_cross[chp]),
+                                       1],
+                                      [self.lower_chp_power_output[chp, t, k],
+                                       self.lower_chp_heat_output[chp, t, k],
+                                       self.hz6_lower[chp, t, k],
+                                       self.hz4_lower[chp, t, k]],
+                                      [1],
+                                      [self.hz5_lower[chp, t, k]])
+                    dual_expr.append(expr1)
+
+        for node in range(self.gas_node_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1  = sum(self.upper_gas_well_output[np.where(self.well_upper_connection_index == node), t, k]) +  \
+                                  sum(self.lower_gas_well_output[np.where(self.well_lower_connection_index == node), t, k]) +  \
+                                  sum(self.gas_flow_out[         np.where(self.gas_pipe_end_node == node), t, k]) -  \
+                                  sum(self.gas_flow_in[          np.where(self.gas_pipe_start_node == node), t, k]) -   \
+                                  sum(self.gas_load[             np.where(self.gas_load_connection_index == node), t, k]) -  \
+                                  sum(self.upper_chp_cost_relax[ np.where(self.chp_upper_connection_gas_index == node), t, k]) - \
+                                  sum(self.lower_chp_cost_relax[ np.where(self.chp_lower_connection_gas_index == node), t, k])
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k))
+                    dual_expr.append(expr1)
+
+        for line in range(self.gas_inactive_line_num):
+            for t in range(1, T):
+                for k in range(K):
+                    cons_expr1 = self.gas_linepack[line, t, k] - self.gas_linepack_coeff[line, t, k] * (
+                            self.gas_node_pressure[self.gas_pipe_start_node[line]] + self.gas_node_pressure[self.gas_pipe_end_node[line]]) / 2
+                    cons_expr2 = self.gas_linepack[line, t, k] - self.gas_linepack[line, t-1, k] - self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+
+        for line in range(self.gas_inactive_line_num):
+            for t in [0]:
+                for k in range(K):
+                    cons_expr1 = self.gas_linepack[line, t, k] - self.gas_linepack_coeff[line, t, k] * (
+                            self.gas_node_pressure[self.gas_pipe_start_node[line]] + self.gas_node_pressure[self.gas_pipe_end_node[line]]) / 2
+                    cons_expr2 = self.gas_linepack[line, t, k] - self.gas_linepack[line, T, k] - self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+
+        for line_a in range(self.gas_active_line_num):
+            line = line_a + self.gas_inactive_line_num 
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.gas_flow_out[line, t, k] - 0.97 * self.gas_flow_in[line, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_gas_flow_active_line_' + str(line) + '_time_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+
+        for well in range(self.well_upper_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.upper_gas_well_output[well, t, k] - self.well_upper_output_min[well]
+                    cons_expr2 = self.well_upper_output_max[well] - self.upper_gas_well_output[well, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_upper_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_upper_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+
+        for well in range(self.well_lower_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.lower_gas_well_output[well, t, k] - self.well_lower_output_min[well]
+                    cons_expr2 = self.well_lower_output_max[well] - self.lower_gas_well_output[well, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+
+        for node in range(self.gas_node_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.gas_node_pressure[node, t, k] - self.gas_node_pressure_min[node]
+                    cons_expr2 = self.gas_node_pressure_max[node] - self.gas_node_pressure[node, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_pressure_min_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_node_pressure_max_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+
+        for compressor_line in range(self.gas_active_line_num):
+            compressor = compressor_line + self.gas_inactive_line_num
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.gas_compressor_coeff[compressor_line] * self.gas_node_pressure[self.gas_pipe_start_node[compressor]] - \
+                                 self.gas_node_pressure[self.gas_pipe_end_node[compressor]]
+                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_compressor_pressure_' + str(compressor_line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+
+        for line in range(self.gas_line_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
+                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_gas_flow_great_zero_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+
+        for line in range(self.gas_inactive_line_num):
+            for t in range(T):
+                for k in range(K):
+                    B = self.model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY)
+                    C = self.model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY)
+                    A = self.model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY)
+                    self.model.addConstr(lhs=B * B,
+                                         rhs=self.gas_node_pressure[self.gas_pipe_end_node[line], t, k],
+                                         sense=gurobi.GRB.EQUAL,
+                                         name='constraint_relax_1' + str(line) + str(t) + str(k))
+                    self.model.addConstr(lhs=C * C,
+                                         rhs=self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
+                                         sense=gurobi.GRB.EQUAL,
+                                         name='constraint_relax_2' + str(line) + str(t) + str(k))
+                    self.model.addConstr(lhs=A,
+                                         rhs=(self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2,
+                                         sense=gurobi.GRB.EQUAL,
+                                         name='constraint_relax_3' + str(line) + str(t) + str(k))
+                    self.model.addConstr(lhs=B * B + C * C,
+                                         rhs=A * A,
+                                         sense=gurobi.GRB.LESS_EQUAL,
+                                         name='constrain_relax_4' + str(line) + str(t) + str(k))
+                    self.model.addConstr(lhs=self.dual_gas_1[line, t, k] * self.dual_gas_1[line, t, k] + self.dual_gas_2[line, t, k] * self.dual_gas_2[line, t, k],
+                                         rhs=self.dual_gas_3[line, t, k] * self.dual_gas_3[line, t, k],
+                                         sense=gurobi.GRB.LESS_EQUAL,
+                                         name='constrain_relax_5' + str(line) + str(t) + str(k))
 
     def build_lower_objective(self):
         lower_objs = []
@@ -519,7 +689,7 @@ class OneLayer:
         for gen in range(self.generator_upper_num):
             for t in range(T):
                 self.model.addConstr(
-                   lhs = self.upper_generator_quoted_price_tuple_dict[gen, t],
+                   lhs=self.upper_generator_quoted_price_tuple_dict[gen, t],
                    rhs=self.upper_generator_quoted_price_max[gen][t],
                    sense=gurobi.GRB.LESS_EQUAL,
                    name='upper_generator_quoted_price_max_time' + str(t) + 'gen_' + str(gen))
@@ -527,9 +697,9 @@ class OneLayer:
         for chp in range(self.chp_upper_num):
             for t in range(T):
                 self.model.addConstr(
-                   lhs= self.upper_chp_power_quoted_price_tuple_dict[chp, t],
-                   rhs= self.upper_chp_power_quoted_price_max[chp][t],
-                   sense= gurobi.GRB.LESS_EQUAL,
+                   lhs=self.upper_chp_power_quoted_price_tuple_dict[chp, t],
+                   rhs=self.upper_chp_power_quoted_price_max[chp][t],
+                   sense=gurobi.GRB.LESS_EQUAL,
                    name='upper_chp_power_quoted_price_max' + str(t) + 'chp_' + str(chp)
                 )
 
@@ -539,7 +709,7 @@ class OneLayer:
                     lhs=self.upper_chp_heat_quoted_price_tuple_dict[chp, t],
                     rhs=self.upper_chp_heat_quoted_price_max[chp][t],
                     sense=gurobi.GRB.LESS_EQUAL,
-                    name= 'upper_chp_heat_quoted_price_max' + str(t) + 'chp_' + str(chp)
+                    name='upper_chp_heat_quoted_price_max' + str(t) + 'chp_' + str(chp)
                 )
 
     def build_upper_objective(self):

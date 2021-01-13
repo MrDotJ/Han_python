@@ -72,6 +72,20 @@ def Complementary_equal(expr, model, dual_var_name):
     return var_dual, expr * var_dual
 
 
+def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_var_name):
+    left_var_length = len(left_coeff)
+    right_var_length = len(right_coeff)
+    dual_left = model.addVars(left_var_length, lb=-1*gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name=dual_var_name + 'left')
+    dual_right = model.addVars(right_var_length, lb=-1*gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name=dual_var_name + 'right')
+    expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i] for i in range(left_var_length)])
+    expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * right_var[i] * right_var[i] for i in range(right_var_length)])
+    model.addConstr(expr_left <= expr_right)
+    dual_expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * dual_left[i] * dual_left[i] for i in range(left_var_length)])
+    dual_expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * dual_right[i] * dual_right[i] for i in range(right_var_length)])
+    model.addConstr(dual_expr_left <= dual_expr_right)
+    lagrange_sum = gurobi.quicksum([left_coeff[i] * left_var[i] * dual_left[i] for i in range(left_var_length)]) + gurobi.quicksum([right_coeff[i] * right_var[i] * dual_right[i] for i in range(right_var_length)])
+    return dual_left, dual_right, lagrange_sum
+
 def tonp(vars_gur) -> np.array:
     keys = vars_gur.keys()
     key_last = keys[-1]
