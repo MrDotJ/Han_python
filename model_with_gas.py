@@ -503,38 +503,44 @@ class OneLayer:
         for chp in range(self.chp_upper_num):
             for t in range(T):
                 for k in range(K):
-                    cons_epxr1 = self.hz4_upper[chp, t, k] - self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k] - self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k] + self.upper_chp_cost_relax[chp, t, k] - self.chp_upper_coeff_const[chp] - 1
-                    cons_epxr2 = -1 * self.hz5_upper[chp, t, k] - self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k] - self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k] + self.upper_chp_cost_relax[chp, t, k] - self.chp_upper_coeff_const[chp] + 1
-                    cons_epxr3 = self.hz6_upper[chp, t, k] - self.upper_chp_power_output[chp, t, k] - self.upper_chp_heat_output[chp, t, k]
-                    _, expr1 = Complementary_soc([2 * sqrt(self.chp_upper_coeff_p_2[chp]),
-                                       2 * sqrt(self.chp_upper_coeff_h_2[chp]),
-                                       2 * sqrt(self.chp_upper_coeff_cross[chp]),
-                                       1],
-                                      [self.upper_chp_power_output[chp, t, k],
-                                       self.upper_chp_heat_output[chp, t, k],
-                                       self.hz6_upper[chp, t, k],
-                                       self.hz4_upper[chp, t, k]],
-                                      [1],
-                                      [self.hz5_upper[chp, t, k]])
+                    cons_expr1 = self.hz4_upper[chp, t, k] - self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k] - self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k] + self.upper_chp_cost_relax[chp, t, k] - self.chp_upper_coeff_const[chp] - 1
+                    cons_expr2 = -1 * self.hz5_upper[chp, t, k] - self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k] - self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k] + self.upper_chp_cost_relax[chp, t, k] - self.chp_upper_coeff_const[chp] + 1
+                    cons_expr3 = self.hz6_upper[chp, t, k] - self.upper_chp_power_output[chp, t, k] - self.upper_chp_heat_output[chp, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'auxiliary_1_upper_chp' + str(chp) + '_time_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'auxiliary_2_upper_chp' + str(chp) + '_time_' + str(t) + '_scenario_' + str(k))
+                    _, expr3 = Complementary_equal(cons_expr3, self.model, 'auxiliary_3_upper_chp' + str(chp) + '_time_' + str(t) + '_scenario_' + str(k))
+                    _, expr4 = Complementary_soc(
+                        [2 * sqrt(self.chp_upper_coeff_p_2[chp]), 2 * sqrt(self.chp_upper_coeff_h_2[chp]), 2 * sqrt(self.chp_upper_coeff_cross[chp]), 1],
+                        [self.upper_chp_power_output[chp, t, k], self.upper_chp_heat_output[chp, t, k], self.hz6_upper[chp, t, k], self.hz4_upper[chp, t, k]],
+                        [1],
+                        [self.hz5_upper[chp, t, k]],
+                        self.model,
+                        'chp_cost_relax_upper_chp' + str(chp) + str(t) + str(k))
                     dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+                    dual_expr.append(expr3)
+                    dual_expr.append(expr4)
 
         for chp in range(self.chp_lower_num):
             for t in range(T):
                 for k in range(K):
-                    cons_epxr1 = self.hz4_lower[chp, t, k] - self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k] - self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k] + self.lower_chp_cost_relax[chp, t, k] - self.chp_lower_coeff_const[chp] - 1
-                    cons_epxr2 = -1 * self.hz5_lower[chp, t, k] - self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k] - self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k] + self.lower_chp_cost_relax[chp, t, k] - self.chp_lower_coeff_const[chp] + 1
-                    cons_epxr3 = self.hz6_lower[chp, t, k] - self.lower_chp_power_output[chp, t, k] - self.lower_chp_heat_output[chp, t, k]
-                    _, expr1 = Complementary_soc([2 * sqrt(self.chp_lower_coeff_p_2[chp]),
-                                       2 * sqrt(self.chp_lower_coeff_h_2[chp]),
-                                       2 * sqrt(self.chp_lower_coeff_cross[chp]),
-                                       1],
-                                      [self.lower_chp_power_output[chp, t, k],
-                                       self.lower_chp_heat_output[chp, t, k],
-                                       self.hz6_lower[chp, t, k],
-                                       self.hz4_lower[chp, t, k]],
-                                      [1],
-                                      [self.hz5_lower[chp, t, k]])
+                    cons_expr1 = self.hz4_lower[chp, t, k] - self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k] - self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k] + self.lower_chp_cost_relax[chp, t, k] - self.chp_lower_coeff_const[chp] - 1
+                    cons_expr2 = -1 * self.hz5_lower[chp, t, k] - self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k] - self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k] + self.lower_chp_cost_relax[chp, t, k] - self.chp_lower_coeff_const[chp] + 1
+                    cons_expr3 = self.hz6_lower[chp, t, k] - self.lower_chp_power_output[chp, t, k] - self.lower_chp_heat_output[chp, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'auxiliary_1_lower_chp' + str(chp) + '_time_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'auxiliary_2_lower_chp' + str(chp) + '_time_' + str(t) + '_scenario_' + str(k))
+                    _, expr3 = Complementary_equal(cons_expr3, self.model, 'auxiliary_3_lower_chp' + str(chp) + '_time_' + str(t) + '_scenario_' + str(k))
+                    _, expr4 = Complementary_soc(
+                        [2 * sqrt(self.chp_lower_coeff_p_2[chp]), 2 * sqrt(self.chp_lower_coeff_h_2[chp]), 2 * sqrt(self.chp_lower_coeff_cross[chp]), 1],
+                        [self.lower_chp_power_output[chp, t, k], self.lower_chp_heat_output[chp, t, k], self.hz6_lower[chp, t, k], self.hz4_lower[chp, t, k]],
+                        [1],
+                        [self.hz5_lower[chp, t, k]],
+                        self.model,
+                        'chp_cost_relax_lower_chp' + str(chp) + str(t) + str(k))
                     dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+                    dual_expr.append(expr3)
+                    dual_expr.append(expr4)
 
         for node in range(self.gas_node_num):
             for t in range(T):
@@ -628,29 +634,15 @@ class OneLayer:
         for line in range(self.gas_inactive_line_num):
             for t in range(T):
                 for k in range(K):
-                    B = self.model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY)
-                    C = self.model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY)
-                    A = self.model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY)
-                    self.model.addConstr(lhs=B * B,
-                                         rhs=self.gas_node_pressure[self.gas_pipe_end_node[line], t, k],
-                                         sense=gurobi.GRB.EQUAL,
-                                         name='constraint_relax_1' + str(line) + str(t) + str(k))
-                    self.model.addConstr(lhs=C * C,
-                                         rhs=self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
-                                         sense=gurobi.GRB.EQUAL,
-                                         name='constraint_relax_2' + str(line) + str(t) + str(k))
-                    self.model.addConstr(lhs=A,
-                                         rhs=(self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2,
-                                         sense=gurobi.GRB.EQUAL,
-                                         name='constraint_relax_3' + str(line) + str(t) + str(k))
-                    self.model.addConstr(lhs=B * B + C * C,
-                                         rhs=A * A,
-                                         sense=gurobi.GRB.LESS_EQUAL,
-                                         name='constrain_relax_4' + str(line) + str(t) + str(k))
-                    self.model.addConstr(lhs=self.dual_gas_1[line, t, k] * self.dual_gas_1[line, t, k] + self.dual_gas_2[line, t, k] * self.dual_gas_2[line, t, k],
-                                         rhs=self.dual_gas_3[line, t, k] * self.dual_gas_3[line, t, k],
-                                         sense=gurobi.GRB.LESS_EQUAL,
-                                         name='constrain_relax_5' + str(line) + str(t) + str(k))
+                    self.A[line, t, k] = self.model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY)
+                    cons_expr1 = self.A[line, t, k] - (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2
+                    Complementary_equal(cons_expr1, self.model, 'weymouth_relax_second_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    Complementary_soc([1, 1],
+                                      [self.gas_node_pressure[self.gas_pipe_end_node[line], t, k], self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
+                                      [1],
+                                      [self.A[line, t, k]],
+                                      self.model,
+                                      'weymouth_relax_first_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
 
     def build_lower_objective(self):
         lower_objs = []
