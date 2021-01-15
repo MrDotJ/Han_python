@@ -1,5 +1,5 @@
 import numpy as np
-T = 1
+T = 2
 K = 1
 empirical_distribution = [1/K] * K
 confidence_level = 0.2
@@ -83,7 +83,7 @@ def get_config():
         'line_start': power_line_info[:, 0].astype(np.int),
         'line_end': power_line_info[:, 1].astype(np.int),
 
-        'upper_generator_connection_index': upper_generator_info[:, 0],
+        'upper_generator_connection_index': upper_generator_info[:, 0].astype(np.int),
         'upper_generator_num': len(upper_generator_info),
         'upper_generator_max': upper_generator_info[:, 1].tolist(),
         'upper_generator_min': upper_generator_info[:, 2].tolist(),
@@ -92,7 +92,7 @@ def get_config():
         'upper_generator_cost': upper_generator_info[:, 5].tolist(),
         'upper_generator_quoted_price_max': [[bid] * T for bid in upper_generator_info[:, 6]],    # its shape is => (generator, T)
 
-        'lower_generator_connection_index': lower_generator_info[:, 0],
+        'lower_generator_connection_index': lower_generator_info[:, 0].astype(np.int),
         'lower_generator_num': len(lower_generator_info),
         'lower_generator_max': lower_generator_info[:, 1].tolist(),
         'lower_generator_min': lower_generator_info[:, 2].tolist(),
@@ -101,10 +101,10 @@ def get_config():
         'lower_generator_cost': lower_generator_info[:, 5].tolist(),
 
         'load_num': len(power_load_info),
-        'load_index': power_load_info[:, 0].astype(np.int64),
+        'load_index': power_load_info[:, 0].astype(np.int),
         'load': (power_load_info[:, 1].reshape((-1, 1)).dot(power_load_demand_total.reshape((1, -1)))),
 
-        'wind_connection_index': wind_connection_index,
+        'wind_connection_index': wind_connection_index.astype(np.int),
         'wind_output': wind_output
     }
 
@@ -122,7 +122,10 @@ def get_config():
 
     lower_chp_info = np.array([
         [
-         2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.0 * 0.6,            0
+           2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.0 * 0.6,            0
+        ],
+        [
+            2650 * 0.6, 14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,       0.0 * 0.6,           0
         ],
     ])
 
@@ -199,11 +202,11 @@ def get_config():
         43.22580645, 44.19354839, 44.19354839, 44.19354839, 45.16129032, 46.12903226, 47.09677419, 47.09677419]) / 50 * 0
 
     upper_chp_power_index = np.array([
-        2
+        2,2
     ])
 
     lower_chp_power_index = np.array([
-        3
+        3,3
     ])
 
     heat_system = {
@@ -218,8 +221,8 @@ def get_config():
 
         'heater_num': len(heater_info),
         'exchanger_num': len(exchanger_info),
-        'upper_chp_connection_heater_index': upper_chp_info[:, 6],
-        'lower_chp_connection_heater_index': lower_chp_info[:, 6],
+        'upper_chp_connection_heater_index': upper_chp_info[:, 6].astype(np.int),
+        'lower_chp_connection_heater_index': lower_chp_info[:, 6].astype(np.int),
         'heater_connection_index': heater_info[:, 0].astype(np.int64),
         'exchanger_connection_index': exchanger_info[:, 0].astype(np.int64),
         'heater_tempe_supply_min': heat_network_node[heater_info[:, 0].astype(np.int), 1].tolist(),
@@ -233,8 +236,8 @@ def get_config():
 
         'load' : exchanger_info[:, 1].reshape((-1, 1)).dot(heat_load.reshape((1, -1))),
 
-        'chp_upper_connection_power_index': upper_chp_power_index,
-        'chp_lower_connection_power_index': lower_chp_power_index,
+        'chp_upper_connection_power_index': upper_chp_power_index.astype(np.int),
+        'chp_lower_connection_power_index': lower_chp_power_index.astype(np.int),
     }
 
     chp_system = {
