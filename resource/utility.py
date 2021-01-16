@@ -68,8 +68,8 @@ def Complementary_great(expr, model, dual_var_name):  # expr should be greater t
 def Complementary_equal(expr, model, dual_var_name):
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
     var_dual = model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name=dual_var_name)
-    model.addConstr(expr == 0)
-    return var_dual, expr * var_dual
+    model.addConstr(1 * expr == 0)
+    return var_dual, -1 * expr * var_dual
 
 
 def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_var_name):

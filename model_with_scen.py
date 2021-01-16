@@ -174,6 +174,8 @@ class OneLayer:
         self.dual_exchanger_return_min                      = None
         self.dual_exchanger_return_max                      = None
         self.dual_heater_balance                            = None
+        self.dual_bus_angle_min                             = None
+        self.dual_bus_angle_max                             = None
 
         self.all_lower_level_vars                           = []
         self.obj_k                                          = []
@@ -186,8 +188,8 @@ class OneLayer:
         self.upper_chp_power_quoted_price                 = tonp( self.upper_chp_power_quoted_price_tuple_dict                                                             )
         self.upper_generator_power_output                 = tonp( self.model.addVars(self.generator_upper_num, T, K,                    name='upper_generator_power'       )                                                 )
         self.lower_generator_power_output                 = tonp( self.model.addVars(self.generator_lower_num, T, K,                    name='lower_generator_power'       )                                                 )
-        self.line_power_flow                              = tonp( self.model.addVars(self.ele_line_num,        T, K, lb=-1 * 10, ub=10, name='line_power_flow'             )                                                       )
-        self.bus_angle                                    = tonp( self.model.addVars(self.ele_node_num,        T, K, lb=-1 * 10, ub=10, name='bus_angle'                   )                                                             )
+        self.line_power_flow                              = tonp( self.model.addVars(self.ele_line_num,        T, K, lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name='line_power_flow'             )                                                       )
+        self.bus_angle                                    = tonp( self.model.addVars(self.ele_node_num,        T, K, lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name='bus_angle'                   )                                                             )
 
         self.dual_node_power_balance                      = np.empty((self.ele_node_num,        T,   K, ), dtype=object)
         self.dual_line_power_flow_great                   = np.empty((self.ele_line_num,        T,   K, ), dtype=object)
@@ -196,6 +198,8 @@ class OneLayer:
         self.dual_lower_generator_power_output_max        = np.empty((self.generator_lower_num, T,   K, ), dtype=object)
         self.dual_lower_generator_power_output_ramp_up    = np.empty((self.generator_lower_num, T,   K, ), dtype=object)
         self.dual_lower_generator_power_output_ramp_down  = np.empty((self.generator_lower_num, T,   K, ), dtype=object)
+        self.dual_bus_angle_min                           = np.empty((self.ele_node_num,        T,   K, ), dtype=object)
+        self.dual_bus_angle_max                           = np.empty((self.ele_node_num,        T,   K, ), dtype=object)
 
         self.all_lower_level_vars.extend(self.upper_generator_power_output.flatten().tolist())
         self.all_lower_level_vars.extend(self.lower_generator_power_output.flatten().tolist())
@@ -268,7 +272,7 @@ class OneLayer:
                         sum(self.line_power_flow[np.where(self.ele_line_start == node), t, k].flatten()) +  \
                         sum(self.line_power_flow[np.where(self.ele_line_end == node), t, k].flatten()) -  \
                         sum(self.ele_load[np.where(self.ele_load_index == node), t].flatten())
-                    self.dual_node_power_balance[node, t], expr1 = Complementary_equal(-1 * cons_expr1, self.model, 'dual_node_power_balance_' + str(t) + '_' + str(node) + '_' + 'scenario' + str(k))
+                    self.dual_node_power_balance[node, t, k], expr1 = Complementary_equal(1 * cons_expr1, self.model, 'dual_node_power_balance_' + str(t) + '_' + str(node) + '_' + 'scenario' + str(k))
                     dual_expr.append(expr1)
 
         for line in range(self.ele_line_num):
@@ -284,6 +288,16 @@ class OneLayer:
                 cons_expr1 = self.bus_angle[2, t, k]
                 _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_reference_angle_' + str(t) + 'scenario' + str(k))
                 dual_expr.append(expr1)
+
+        for node in range(self.ele_node_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.bus_angle[node, t, k] + 3
+                    cons_expr2 = 3 - self.bus_angle[node, t, k]
+                    self.dual_bus_angle_min[node, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_angle_min' + str(node) + str(t) + str(k))
+                    self.dual_bus_angle_max[node, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_angle_max' + str(node) + str(t) + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
 
         for line in range(self.ele_line_num):
             for t in range(T):
@@ -579,13 +593,13 @@ class OneLayer:
                     objs.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
                     objs.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
                     objs.append(self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
-                    objs.append(self.dual_lower_generator_power_output_ramp_up[gen, t, k] * self.generator_lower_ramp_up[gen])
-                    objs.append(self.dual_lower_generator_power_output_ramp_down[gen, t, k] * self.generator_lower_ramp_down[gen])
+                    objs.append(1 * self.dual_lower_generator_power_output_ramp_up[gen, t, k] * self.generator_lower_ramp_up[gen])
+                    objs.append(1 * self.dual_lower_generator_power_output_ramp_down[gen, t, k] * self.generator_lower_ramp_down[gen])
                     objs_p.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
                     objs_p.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
                     objs_p.append(self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
-                    objs_p.append(self.dual_lower_generator_power_output_ramp_up[gen, t, k] * self.generator_lower_ramp_up[gen])
-                    objs_p.append(self.dual_lower_generator_power_output_ramp_down[gen, t, k] * self.generator_lower_ramp_down[gen])
+                    objs_p.append(1 * self.dual_lower_generator_power_output_ramp_up[gen, t, k] * self.generator_lower_ramp_up[gen])
+                    objs_p.append(1 * self.dual_lower_generator_power_output_ramp_down[gen, t, k] * self.generator_lower_ramp_down[gen])
                 # for t in [T-1]:
                 #     objs.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
                 #     objs.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
@@ -605,6 +619,11 @@ class OneLayer:
                 for t in range(T):
                     objs.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
                     objs_p.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
+
+            for node in range(self.ele_node_num):
+                for t in range(T):
+                    objs.append(-3 * self.dual_bus_angle_min[node, t, k] - 3 * self.dual_bus_angle_max[node, t, k])
+                    objs_p.append(-3 * self.dual_bus_angle_min[node, t, k] - 3 * self.dual_bus_angle_max[node, t, k])
 
             # for chp in range(self.chp_upper_num):
             #     for t in range(T):
