@@ -450,12 +450,10 @@ class OneLayer:
                                    (self.heat_pipe_water_flow[np.where(self.heat_pipe_end_node_return == node)].reshape((-1, 1)))              ) )[0][0] - \
                                  self.heat_node_tempe_return[node, t, k] * \
                                  (sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_end_node_return == node)]))
-                    if node != 0:
-                        _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_mix_constraints_supply' + str(t) + '_' + str(node) + 'scenario' + str(k))
-                        dual_expr.append(expr1)
-                    if node != self.heat_node_num - 1:
-                        _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_mix_constraints_return' + str(t) + '_' + str(node) + 'scenario' + str(k))
-                        dual_expr.append(expr2)
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_mix_constraints_supply' + str(t) + '_' + str(node) + 'scenario' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_mix_constraints_return' + str(t) + '_' + str(node) + 'scenario' + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
 
         for line in range(self.heat_pipe_num):
             for t in range(T):
@@ -608,6 +606,10 @@ class OneLayer:
                     objs.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
                     objs_p.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
 
+            # for chp in range(self.chp_upper_num):
+            #     for t in range(T):
+            #         objs.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[0, t, k])
+            #         objs.append(self.upper_chp_power_output[chp, t, k] * self.dual_node_power_balance[self.chp_upper_connection_power_index[chp], t, k])
 
             for chp in range(self.heat_heater_num):
                 for t in range(T):
@@ -668,8 +670,8 @@ class OneLayer:
             obj_k_h.append(sum(objs_h))
 
         self.obj_k = obj_k
-        self.equient_generator_cost = obj_k_p[0]
-        self.equient_chp_cost = obj_k_h[0]
+        self.equient_generator_cost = obj_k_p
+        self.equient_chp_cost = obj_k_h
 
     def optimize(self, distribution):
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))

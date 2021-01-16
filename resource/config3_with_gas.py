@@ -1,5 +1,5 @@
 import numpy as np
-T = 1
+T = 2
 K = 1
 empirical_distribution = [1/K] * K
 confidence_level = 0.2
@@ -266,6 +266,14 @@ def get_config():
         'chp_lower_coeff_cross': lower_chp_info[:, 4].tolist(),
         'chp_lower_coeff_const': lower_chp_info[:, 5].tolist(),
     }
+
+
+    upper_well_info = np.array(
+        []
+    )
+
+
+
 
 
 
