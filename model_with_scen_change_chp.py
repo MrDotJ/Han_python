@@ -164,13 +164,27 @@ class OneLayer:
         self.dual_line_power_flow_less                      = None
         self.dual_lower_generator_power_output_min          = None
         self.dual_lower_generator_power_output_max          = None
+        self.dual_upper_generator_power_output_min          = None
+        self.dual_upper_generator_power_output_max          = None
         self.dual_lower_generator_power_output_ramp_up      = None
         self.dual_lower_generator_power_output_ramp_down    = None
         self.dual_lower_chp_point_sum_one                   = None
+        self.dual_lower_chp_power_output                    = None
+        self.dual_lower_chp_heat_output                     = None
+        self.dual_upper_chp_power_output                    = None
+        self.dual_upper_chp_heat_output                     = None
+        self.dual_upper_chp_point_sum_one                   = None
         self.dual_lower_chp_point_less_one                  = None
+        self.dual_lower_chp_point_great_zero                = None
+        self.dual_upper_chp_point_less_one                  = None
+        self.dual_upper_chp_point_great_zero                = None
         self.dual_exchanger_balance                         = None
         self.dual_heater_supply_min                         = None
         self.dual_heater_supply_max                         = None
+        self.dual_heater_return_min                         = None
+        self.dual_heater_return_max                         = None
+        self.dual_exchanger_supply_min                      = None
+        self.dual_exchanger_supply_max                      = None
         self.dual_exchanger_return_min                      = None
         self.dual_exchanger_return_max                      = None
         self.dual_heater_balance                            = None
@@ -180,14 +194,15 @@ class OneLayer:
         self.all_lower_level_vars                           = []
         self.obj_k                                          = []
         self.do_nothing                                     = 0
-        self.equivalent_chp_cost                            = 0
-        self.equivalent_generator_cost                      = 0
+        self.equivalent_cost                                = 0
+        self.equivalent_revenue                             = 0
 
     def build_power_system(self):
         self.upper_generator_quoted_price_tuple_dict      = self.model.addVars(self.generator_upper_num, T, lb=0,                       name='upper_generator_quoted_price')
         self.upper_chp_power_quoted_price_tuple_dict      = self.model.addVars(self.chp_upper_num,       T, lb=0,                       name='upper_chp_power_quoted_price')
         self.upper_generator_quoted_price                 = tonp( self.upper_generator_quoted_price_tuple_dict                                                             )
         self.upper_chp_power_quoted_price                 = tonp( self.upper_chp_power_quoted_price_tuple_dict                                                             )
+
         self.upper_generator_power_output                 = tonp( self.model.addVars(self.generator_upper_num, T, K,                    name='upper_generator_power'       )                                                 )
         self.lower_generator_power_output                 = tonp( self.model.addVars(self.generator_lower_num, T, K,                    name='lower_generator_power'       )                                                 )
         self.line_power_flow                              = tonp( self.model.addVars(self.ele_line_num,        T, K, lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name='line_power_flow'             )                                                       )
@@ -198,6 +213,8 @@ class OneLayer:
         self.dual_line_power_flow_less                    = np.empty((self.ele_line_num,        T,   K, ), dtype=object)
         self.dual_lower_generator_power_output_min        = np.empty((self.generator_lower_num, T,   K, ), dtype=object)
         self.dual_lower_generator_power_output_max        = np.empty((self.generator_lower_num, T,   K, ), dtype=object)
+        self.dual_upper_generator_power_output_min        = np.empty((self.generator_upper_num, T,   K, ), dtype=object)
+        self.dual_upper_generator_power_output_max        = np.empty((self.generator_upper_num, T,   K, ), dtype=object)
         self.dual_lower_generator_power_output_ramp_up    = np.empty((self.generator_lower_num, T,   K, ), dtype=object)
         self.dual_lower_generator_power_output_ramp_down  = np.empty((self.generator_lower_num, T,   K, ), dtype=object)
         self.dual_bus_angle_min                           = np.empty((self.ele_node_num,        T,   K, ), dtype=object)
@@ -238,10 +255,22 @@ class OneLayer:
         self.heat_pipe_end_tempe_return         = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_end_temperature_return_network')    )
 
         self.dual_lower_chp_point_sum_one       = np.empty((self.chp_lower_num,                     T, K, ), dtype=object)
+        self.dual_lower_chp_power_output        = np.empty((self.chp_lower_num,                     T, K, ), dtype=object)
+        self.dual_lower_chp_heat_output         = np.empty((self.chp_lower_num,                     T, K, ), dtype=object)
+        self.dual_upper_chp_power_output        = np.empty((self.chp_upper_num,                     T, K, ), dtype=object)
+        self.dual_upper_chp_heat_output         = np.empty((self.chp_upper_num,                     T, K, ), dtype=object)
+        self.dual_upper_chp_point_sum_one       = np.empty((self.chp_upper_num,                     T, K, ), dtype=object)
         self.dual_lower_chp_point_less_one      = np.empty((self.chp_lower_num, self.chp_point_num, T, K, ), dtype=object)
+        self.dual_lower_chp_point_great_zero    = np.empty((self.chp_lower_num, self.chp_point_num, T, K, ), dtype=object)
+        self.dual_upper_chp_point_less_one      = np.empty((self.chp_upper_num, self.chp_point_num, T, K, ), dtype=object)
+        self.dual_upper_chp_point_great_zero    = np.empty((self.chp_upper_num, self.chp_point_num, T, K, ), dtype=object)
         self.dual_exchanger_balance             = np.empty((self.heat_exchanger_num,                T, K, ), dtype=object)
         self.dual_heater_supply_min             = np.empty((self.heat_heater_num,                   T, K, ), dtype=object)
         self.dual_heater_supply_max             = np.empty((self.heat_heater_num,                   T, K, ), dtype=object)
+        self.dual_heater_return_min             = np.empty((self.heat_heater_num,                   T, K, ), dtype=object)
+        self.dual_heater_return_max             = np.empty((self.heat_heater_num,                   T, K, ), dtype=object)
+        self.dual_exchanger_supply_min          = np.empty((self.heat_exchanger_num,                T, K, ), dtype=object)
+        self.dual_exchanger_supply_max          = np.empty((self.heat_exchanger_num,                T, K, ), dtype=object)
         self.dual_exchanger_return_min          = np.empty((self.heat_exchanger_num,                T, K, ), dtype=object)
         self.dual_exchanger_return_max          = np.empty((self.heat_exchanger_num,                T, K, ), dtype=object)
         self.dual_heater_balance                = np.empty((self.heat_heater_num,                   T, K, ), dtype=object)
@@ -316,8 +345,8 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = self.upper_generator_power_output[gen, t, k] - self.generator_upper_min[gen]
                     cons_expr2 = -1 * self.upper_generator_power_output[gen, t, k] + self.generator_upper_max[gen]
-                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_upper_generator_power_output_min' + str(t) + '_' + str(gen) + 'scenario' + str(k))
-                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_upper_generator_power_output_max' + str(t) + '_' + str(gen) + 'scenario' + str(k))
+                    self.dual_upper_generator_power_output_min[gen, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_upper_generator_power_output_min' + str(t) + '_' + str(gen) + 'scenario' + str(k))
+                    self.dual_upper_generator_power_output_max[gen, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_upper_generator_power_output_max' + str(t) + '_' + str(gen) + 'scenario' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
 
@@ -382,9 +411,9 @@ class OneLayer:
                     cons_expr1 = ( (self.upper_chp_point[chp, :, t, k].reshape((1, -1))).dot(self.upper_chp_POWER[chp, :].reshape((-1, 1))) )[0][0] - self.upper_chp_power_output[chp, t, k]
                     cons_expr2 = ( (self.upper_chp_point[chp, :, t, k].reshape((1, -1))).dot(self.upper_chp_HEAT[chp, :].reshape((-1, 1)))  )[0][0] - self.upper_chp_heat_output[chp, t, k]
                     cons_expr3 = sum(self.upper_chp_point[chp, :, t, k]) - 1
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_upper_chp_power_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
-                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_upper_chp_heat_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
-                    _, expr3 = Complementary_equal(cons_expr3, self.model, 'dual_upper_chp_point_sum_one' + str(t) + '_' + str(chp) + 'scenario' + str(k))
+                    self.dual_upper_chp_power_output[chp, t, k] , expr1 = Complementary_equal(-1 * cons_expr1, self.model, 'dual_upper_chp_power_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
+                    self.dual_upper_chp_heat_output[chp, t, k]  , expr2 = Complementary_equal(-1 * cons_expr2, self.model, 'dual_upper_chp_heat_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
+                    self.dual_upper_chp_point_sum_one[chp, t, k], expr3 = Complementary_equal(cons_expr3, self.model, 'dual_upper_chp_point_sum_one' + str(t) + '_' + str(chp) + 'scenario' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
                     dual_expr.append(expr3)
@@ -393,9 +422,9 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = (  (self.lower_chp_point[chp, :, t, k].reshape((1, -1))).dot(self.lower_chp_POWER[chp, :].reshape((-1, 1)))   )[0][0] - self.lower_chp_power_output[chp, t, k]
                     cons_expr2 = (  (self.lower_chp_point[chp, :, t, k].reshape((1, -1))).dot(self.lower_chp_HEAT[chp, :]. reshape((-1, 1)))   )[0][0] - self.lower_chp_heat_output[chp, t, k]
-                    cons_expr3 = -1 * sum(self.lower_chp_point[chp, :, t, k]) + 1
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_lower_chp_power_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
-                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_lower_chp_heat_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
+                    cons_expr3 = sum(self.lower_chp_point[chp, :, t, k]) - 1
+                    self.dual_lower_chp_power_output[chp, t, k] , expr1 = Complementary_equal(-1 * cons_expr1, self.model, 'dual_lower_chp_power_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
+                    self.dual_lower_chp_heat_output[chp, t, k]  , expr2 = Complementary_equal(-1 * cons_expr2, self.model, 'dual_lower_chp_heat_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k))
                     self.dual_lower_chp_point_sum_one[chp, t, k], expr3 = Complementary_equal(cons_expr3, self.model, 'dual_lower_chp_point_sum_one' + str(t) + '_' + str(chp) + 'scenario' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
@@ -407,8 +436,8 @@ class OneLayer:
                     for k in range(K):
                         cons_expr1 = self.upper_chp_point[chp, point, t, k]
                         cons_expr2 = -1 * self.upper_chp_point[chp, point, t, k] + 1
-                        _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_upper_chp_point_great_zero' + str(t) + '_' + str(chp) + 'scenario' + str(k))
-                        _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_upper_chp_point_less_one' + str(t) + '_' + str(chp) + 'scenario' + str(k))
+                        self.dual_upper_chp_point_great_zero[chp, point, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_upper_chp_point_great_zero' + str(t) + '_' + str(chp) + 'scenario' + str(k))
+                        self.dual_upper_chp_point_less_one[chp, point, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_upper_chp_point_less_one' + str(t) + '_' + str(chp) + 'scenario' + str(k))
                         dual_expr.append(expr1)
                         dual_expr.append(expr2)
 
@@ -418,7 +447,7 @@ class OneLayer:
                     for k in range(K):
                         cons_expr1 = self.lower_chp_point[chp, point, t, k]
                         cons_expr2 = -1 * self.lower_chp_point[chp, point, t, k] + 1
-                        _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_chp_point_great_zero' + str(t) + '_' + str(chp) + 'scenario' + str(k))
+                        self.dual_lower_chp_point_great_zero[chp, point, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_chp_point_great_zero' + str(t) + '_' + str(chp) + 'scenario' + str(k))
                         self.dual_lower_chp_point_less_one[chp, point, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_chp_point_less_one' + str(t) + '_' + str(chp) + 'scenario' + str(k))
                         dual_expr.append(expr1)
                         dual_expr.append(expr2)
@@ -432,7 +461,7 @@ class OneLayer:
                         0.1 * sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_start_node_supply == self.heater_connection_index[heater])]) * \
                         (self.heat_node_tempe_supply[self.heater_connection_index[heater], t, k] -
                          self.heat_node_tempe_return[self.heater_connection_index[heater], t, k])
-                    self.dual_heater_balance[heater, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_heater_balance' + str(t) + '_' + str(heater) + 'scenario' + str(k))
+                    self.dual_heater_balance[heater, t, k], expr1 = Complementary_equal(1 * cons_expr1, self.model, 'dual_heater_balance' + str(t) + '_' + str(heater) + 'scenario' + str(k))
                     dual_expr.append(expr1)
 
         for exchanger in range(self.heat_exchanger_num):
@@ -442,7 +471,7 @@ class OneLayer:
                                  0.1 * sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_end_node_supply == self.exchanger_connection_index[exchanger])]) * \
                                  (self.heat_node_tempe_supply[self.exchanger_connection_index[exchanger], t, k] -
                                   self.heat_node_tempe_return[self.exchanger_connection_index[exchanger], t, k])
-                    self.dual_exchanger_balance[exchanger, t], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_exchanger_balance' + str(t) + '_' + str(exchanger))
+                    self.dual_exchanger_balance[exchanger, t], expr1 = Complementary_equal(-1*cons_expr1, self.model, 'dual_exchanger_balance' + str(t) + '_' + str(exchanger))
                     dual_expr.append(expr1)
 
         for line in range(self.heat_pipe_num):
@@ -450,8 +479,8 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = self.heat_pipe_start_tempe_supply[line, t, k] - self.heat_node_tempe_supply[self.heat_pipe_start_node_supply[line], t, k]
                     cons_expr2 = self.heat_pipe_start_tempe_return[line, t, k] - self.heat_node_tempe_return[self.heat_pipe_start_node_return[line], t, k]
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_line_temp_start_supply_' + str(t) + '_' + str(line) + 'scenario' + str(k))
-                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_line_temp_start_return' + str(t) + '_' + str(line) + 'scenario' + str(k))
+                    _, expr1 = Complementary_equal(-1 * cons_expr1, self.model, 'dual_line_temp_start_supply_' + str(t) + '_' + str(line) + 'scenario' + str(k))
+                    _, expr2 = Complementary_equal(-1 * cons_expr2, self.model, 'dual_line_temp_start_return' + str(t) + '_' + str(line) + 'scenario' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
 
@@ -490,8 +519,8 @@ class OneLayer:
                     cons_expr4 = -1 * self.heat_node_tempe_return[self.heater_connection_index[heater], t, k] + self.heater_tempe_return_max[heater]
                     self.dual_heater_supply_min[heater, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_heater_supply_min' + str(t) + '_' + str(heater) + 'scenario' + str(k))
                     self.dual_heater_supply_max[heater, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_heater_supply_max' + str(t) + '_' + str(heater) + 'scenario' + str(k))
-                    _, expr3 = Complementary_great(cons_expr3, self.model, 'dual_heater_return_min' + str(t) + '_' + str(heater) + 'scenario' + str(k))
-                    _, expr4 = Complementary_great(cons_expr4, self.model, 'dual_heater_return_max' + str(t) + '_' + str(heater) + 'scenario' + str(k))
+                    self.dual_heater_return_min[heater, t, k], expr3 = Complementary_great(cons_expr3, self.model, 'dual_heater_return_min' + str(t) + '_' + str(heater) + 'scenario' + str(k))
+                    self.dual_heater_return_max[heater, t, k], expr4 = Complementary_great(cons_expr4, self.model, 'dual_heater_return_max' + str(t) + '_' + str(heater) + 'scenario' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
                     dual_expr.append(expr3)
@@ -504,8 +533,8 @@ class OneLayer:
                     cons_expr2 = -1 * self.heat_node_tempe_supply[self.exchanger_connection_index[exchanger], t, k] + self.exchanger_tempe_supply_max[exchanger]
                     cons_expr3 = self.heat_node_tempe_return[self.exchanger_connection_index[exchanger], t, k] - self.exchanger_tempe_return_min[exchanger]
                     cons_expr4 = -1 * self.heat_node_tempe_return[self.exchanger_connection_index[exchanger], t, k] + self.exchanger_tempe_return_max[exchanger]
-                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_exchanger_supply_min' + str(t) + '_' + str(exchanger) + 'scenario' + str(k))
-                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_exchanger_supply_max' + str(t) + '_' + str(exchanger) + 'scenario' + str(k))
+                    self.dual_exchanger_supply_min[exchanger, t], expr1 = Complementary_great(cons_expr1, self.model, 'dual_exchanger_supply_min' + str(t) + '_' + str(exchanger) + 'scenario' + str(k))
+                    self.dual_exchanger_supply_max[exchanger, t], expr2 = Complementary_great(cons_expr2, self.model, 'dual_exchanger_supply_max' + str(t) + '_' + str(exchanger) + 'scenario' + str(k))
                     self.dual_exchanger_return_min[exchanger, t], expr3 = Complementary_great(cons_expr3, self.model, 'dual_exchanger_return_min' + str(t) + '_' + str(exchanger) + 'scenario' + str(k))
                     self.dual_exchanger_return_max[exchanger, t], expr4 = Complementary_great(cons_expr4, self.model, 'dual_exchanger_return_max' + str(t) + '_' + str(exchanger) + 'scenario' + str(k))
                     dual_expr.append(expr1)
@@ -578,141 +607,205 @@ class OneLayer:
                     name= 'upper_chp_heat_quoted_price_max' + str(t) + 'chp_' + str(chp)
                 )
 
+    def xxxxxxxbuild_upper_objectivexxx(self):
+        obj_k = []
+        for k in range(K):
+            expected_cost = []
+            for chp in range(self.chp_upper_num):
+                for t in range(T):
+                    expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[self.chp_upper_connection_heater_index[chp], t, k])
+                    expected_cost.append(self.upper_chp_power_output[chp, t, k] * self.dual_node_power_balance[self.chp_upper_connection_power_index[chp], t, k])
+            for gen in range(self.generator_upper_num):
+                for t in range(T):
+                    expected_cost.append(self.upper_generator_power_output[gen, t, k] * self.dual_node_power_balance[self.generator_upper_connection_index[gen], t, k])
+            obj_k.append(sum(expected_cost))
+        self.obj_k = obj_k
+
     def build_upper_objective(self):
         obj_k = []
         obj_k_p = []
         obj_k_h = []
         for k in range(K):
-            objs = []
-            objs_p = []
-            objs_h = []
+            objs_cost = []
+            objs_revenue = []
             for gen in range(self.generator_upper_num):    # generator  成本
                 for t in range(T):
-                    objs.append(self.generator_upper_cost[gen] * self.upper_generator_power_output[gen, t, k])
+                    objs_cost.append(self.generator_upper_cost[gen] * self.upper_generator_power_output[gen, t, k])
 
             for gen in range(self.generator_lower_num):
                 for t in range(T):
-                    objs.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
-                    objs.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
-                    objs.append(self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
-                    objs.append(1 * self.dual_lower_generator_power_output_ramp_up[gen, t, k] * self.generator_lower_ramp_up[gen])
-                    objs.append(1 * self.dual_lower_generator_power_output_ramp_down[gen, t, k] * self.generator_lower_ramp_down[gen])
-                    objs_p.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
-                    objs_p.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
-                    objs_p.append(self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
-                    objs_p.append(1 * self.dual_lower_generator_power_output_ramp_up[gen, t, k] * self.generator_lower_ramp_up[gen])
-                    objs_p.append(1 * self.dual_lower_generator_power_output_ramp_down[gen, t, k] * self.generator_lower_ramp_down[gen])
-                # for t in [T-1]:
-                #     objs.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
-                #     objs.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
-                #     objs.append(self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
-                #     objs_p.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
-                #     objs_p.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
-                #     objs_p.append(self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
+                    objs_revenue.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
+                    objs_revenue.append(-1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
+                    objs_revenue.append(self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
+                    objs_revenue.append(1 * self.dual_lower_generator_power_output_ramp_up[gen, t, k] * self.generator_lower_ramp_up[gen])
+                    objs_revenue.append(1 * self.dual_lower_generator_power_output_ramp_down[gen, t, k] * self.generator_lower_ramp_down[gen])
 
             for line in range(self.ele_line_num):
                 for t in range(T):
-                    objs.append(self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
-                    objs.append(self.dual_line_power_flow_less[line, t, k] * self.ele_line_capacity[line])
-                    objs_p.append(self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
-                    objs_p.append(self.dual_line_power_flow_less[line, t, k] * self.ele_line_capacity[line])
+                    objs_revenue.append(self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
+                    objs_revenue.append(self.dual_line_power_flow_less[line, t, k] * self.ele_line_capacity[line])
 
             for load in range(self.ele_load_num):
                 for t in range(T):
-                    objs.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
-                    objs_p.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
+                    objs_revenue.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
 
             for node in range(self.ele_node_num):
                 for t in range(T):
-                    objs.append(-3 * self.dual_bus_angle_min[node, t, k] - 3 * self.dual_bus_angle_max[node, t, k])
-                    objs_p.append(-3 * self.dual_bus_angle_min[node, t, k] - 3 * self.dual_bus_angle_max[node, t, k])
-
-            # for chp in range(self.chp_upper_num):
-            #     for t in range(T):
-            #         objs.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[0, t, k])
-            #         objs.append(self.upper_chp_power_output[chp, t, k] * self.dual_node_power_balance[self.chp_upper_connection_power_index[chp], t, k])
-
-            for chp in range(self.heat_heater_num):
-                for t in range(T):
-                    objs.append(-1 * self.dual_heater_supply_min[chp, t, k] * self.heater_tempe_supply_min[chp])
-                    objs.append(self.dual_heater_supply_max[chp, t, k] * self.heater_tempe_supply_max[chp])
-                    objs_h.append(-1 * self.dual_heater_supply_min[chp, t, k] * self.heater_tempe_supply_min[chp])
-                    objs_h.append(self.dual_heater_supply_max[chp, t, k] * self.heater_tempe_supply_max[chp])
-
-            for exchanger in range(self.heat_exchanger_num):
-                for t in range(T):
-                    objs.append(-1 * self.dual_exchanger_return_min[exchanger, t, k] * self.exchanger_tempe_return_min[exchanger])
-                    objs.append(self.dual_exchanger_return_max[exchanger, t, k] * self.exchanger_tempe_return_max[exchanger])
-                    objs.append(self.dual_exchanger_balance[exchanger, t, k]  * self.heat_load[exchanger, t])
-                    objs_h.append(-1 * self.dual_exchanger_return_min[exchanger, t, k] * self.exchanger_tempe_return_min[exchanger])
-                    objs_h.append(self.dual_exchanger_return_max[exchanger, t, k] * self.exchanger_tempe_return_max[exchanger])
-                    objs_h.append(self.dual_exchanger_balance[exchanger, t, k]  * self.heat_load[exchanger, t])
+                    objs_revenue.append(-3 * self.dual_bus_angle_min[node, t, k] - 3 * self.dual_bus_angle_max[node, t, k])
 
             for chp in range(self.chp_upper_num):
                 for t in range(T):
-                    objs.append(self.chp_upper_coeff_const[chp])
-                    objs.append(self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k])
-                    objs.append(self.chp_upper_coeff_p_2[chp] * self.upper_chp_power_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
-                    objs.append(self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k])
-                    objs.append(self.chp_upper_coeff_h_2[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_heat_output[chp, t, k])
-                    objs.append(self.chp_upper_coeff_cross[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
-                    objs_h.append(self.chp_upper_coeff_const[chp])
-                    objs_h.append(self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k])
-                    objs_h.append(self.chp_upper_coeff_p_2[chp] * self.upper_chp_power_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
-                    objs_h.append(self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k])
-                    objs_h.append(self.chp_upper_coeff_h_2[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_heat_output[chp, t, k])
-                    objs_h.append(self.chp_upper_coeff_cross[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
+                    objs_cost.append(self.chp_upper_coeff_const[chp])
+                    objs_cost.append(self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k])
+                    objs_cost.append(self.chp_upper_coeff_p_2[chp] * self.upper_chp_power_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
+                    objs_cost.append(self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k])
+                    objs_cost.append(self.chp_upper_coeff_h_2[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_heat_output[chp, t, k])
+                    objs_cost.append(self.chp_upper_coeff_cross[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
 
             for chp in range(self.chp_lower_num):
                 for t in range(T):
-                    objs.append(self.chp_lower_coeff_const[chp])
-                    objs.append(self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k])
-                    objs.append(self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
-                    objs.append(self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k])
-                    objs.append(self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_heat_output[chp, t, k])
-                    objs.append(self.chp_lower_coeff_cross[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
-                    objs_h.append(self.chp_lower_coeff_const[chp])
-                    objs_h.append(self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k])
-                    objs_h.append(self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
-                    objs_h.append(self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k])
-                    objs_h.append(self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_heat_output[chp, t, k])
-                    objs_h.append(self.chp_lower_coeff_cross[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
+                    objs_revenue.append(self.chp_lower_coeff_const[chp])
+                    objs_revenue.append(self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k])
+                    objs_revenue.append(self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
+                    objs_revenue.append(self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k])
+                    objs_revenue.append(self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_heat_output[chp, t, k])
+                    objs_revenue.append(self.chp_lower_coeff_cross[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
+
+            for exchanger in range(self.heat_exchanger_num):
+                for t in range(T):
+                    objs_revenue.append(-1 * self.dual_exchanger_balance[exchanger, t, k] * self.heat_load[exchanger, t])
 
             for chp in range(self.chp_lower_num):
                 for t in range(T):
                     for point in range(self.chp_point_num):
-                        objs.append(self.dual_lower_chp_point_less_one[chp, point, t, k])
-                        objs_h.append(self.dual_lower_chp_point_less_one[chp, point, t, k])
-                    objs.append(-1 * self.dual_lower_chp_point_sum_one[chp, t, k])
-                    objs_h.append(-1 * self.dual_lower_chp_point_sum_one[chp, t, k])
+                        objs_revenue.append(1 * self.dual_lower_chp_point_less_one[chp, point, t, k])
+                    objs_revenue.append(-1 * self.dual_lower_chp_point_sum_one[chp, t, k])
 
-            obj_k.append(sum(objs))
-            obj_k_p.append(sum(objs_p))
-            obj_k_h.append(sum(objs_h))
+            for heater in range(self.heat_heater_num):
+                for t in range(T):
+                    objs_revenue.append(1 * self.dual_heater_supply_min[heater, t, k] * self.heater_tempe_supply_min[heater])
+                    objs_revenue.append(-1 * self.dual_heater_supply_max[heater, t, k] * self.heater_tempe_supply_max[heater])
+                    objs_revenue.append(1 * self.dual_heater_return_min[heater, t, k] * self.heater_tempe_return_min[heater])
+                    objs_revenue.append(-1 * self.dual_heater_return_max[heater, t, k] * self.heater_tempe_return_max[heater])
+
+            for exchanger in range(self.heat_exchanger_num):
+                for t in range(T):
+                    objs_revenue.append(1 * self.dual_exchanger_supply_min[exchanger, t, k] * self.exchanger_tempe_supply_min[exchanger])
+                    objs_revenue.append(-1 * self.dual_exchanger_supply_max[exchanger, t, k] * self.exchanger_tempe_supply_max[exchanger])
+                    objs_revenue.append(1 * self.dual_exchanger_return_min[exchanger, t, k] * self.exchanger_tempe_return_min[exchanger])
+                    objs_revenue.append(-1 * self.dual_exchanger_return_max[exchanger, t, k] * self.exchanger_tempe_return_max[exchanger])
+
+            obj_k.append(sum(objs_cost) + sum(objs_revenue))
+            obj_k_p.append(sum(objs_cost))
+            obj_k_h.append(sum(objs_revenue))
 
         self.obj_k = obj_k
-        self.equivalent_generator_cost = obj_k_p
-        self.equivalent_chp_cost = obj_k_h
+        self.equivalent_revenue = obj_k_h
+        self.equivalent_cost = obj_k_p
 
     def optimize(self, distribution):
         self.model.setParam("IntegralityFocus", 1)
+        self.model.setParam("NonConvex", 2)
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         self.model.optimize()
+
         expected_cost = []
         for chp in range(self.chp_upper_num):
             for t in range(T):
                 for k in range(K):
                     expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[0, t, k])
                     expected_cost.append(self.upper_chp_power_output[chp, t, k] * self.dual_node_power_balance[self.chp_upper_connection_power_index[chp], t, k])
-        self.expected_chp_revenue = sum(expected_cost)
-        expected_cost = []
         for gen in range(self.generator_upper_num):
             for t in range(T):
                 for k in range(K):
                     expected_cost.append(self.upper_generator_power_output[gen, t, k] * self.dual_node_power_balance[self.generator_upper_connection_index[gen], t, k])
-        self.expected_generator_revenue = sum(expected_cost)
+
+        self.expected_revenue = sum(expected_cost)
         value_generator_quoted_price = to_value(self.upper_generator_quoted_price_tuple_dict)
         value_chp_power_quoted_price = to_value(self.upper_chp_power_quoted_price_tuple_dict)
         value_chp_heat_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
         obj_k = np.array([obj.getValue() for obj in self.obj_k])
         return value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k
+
+
+    def sss(self):
+        objs_revenue = []
+        for k in range(K):
+            for load in range(self.ele_load_num):
+                for t in range(T):
+                    objs_revenue.append(1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
+            for line in range(self.ele_line_num):
+                for t in range(T):
+                    objs_revenue.append(-1 * self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
+                    objs_revenue.append(-1 * self.dual_line_power_flow_less[line, t, k] * self.ele_line_capacity[line])
+            for gen in range(self.generator_upper_num):
+                for t in range(T):
+                    objs_revenue.append(1 * self.dual_upper_generator_power_output_min[gen, t, k] * self.generator_upper_min[gen])
+                    objs_revenue.append(-1 * self.dual_upper_generator_power_output_max[gen, t, k] * self.generator_upper_max[gen])
+            for gen in range(self.generator_lower_num):
+                for t in range(T):
+                    objs_revenue.append(1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
+                    objs_revenue.append(-1 * self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
+            for chp in range(self.chp_lower_num):
+                for t in range(T):
+                    for point in range(self.chp_point_num):
+                        objs_revenue.append(-1 * self.dual_lower_chp_point_less_one[chp, point, t, k])
+                    objs_revenue.append(1 * self.dual_lower_chp_point_sum_one[chp, t, k])
+            for chp in range(self.chp_upper_num):
+                for t in range(T):
+                    for point in range(self.chp_point_num):
+                        objs_revenue.append(-1 * self.dual_upper_chp_point_less_one[chp, point, t, k])
+                    objs_revenue.append(1 * self.dual_upper_chp_point_sum_one[chp, t, k])
+            for exchanger in range(self.heat_exchanger_num):
+                for t in range(T):
+                    objs_revenue.append(1 * self.dual_exchanger_balance[exchanger, t, k] * self.heat_load[exchanger, t])
+            for heater in range(self.heat_heater_num):
+                for t in range(T):
+                    objs_revenue.append(-1 * self.dual_heater_supply_min[heater, t, k] * self.heater_tempe_supply_min[heater])
+                    objs_revenue.append(1 * self.dual_heater_supply_max[heater, t, k] * self.heater_tempe_supply_max[heater])
+                    objs_revenue.append(-1 * self.dual_heater_return_min[heater, t, k] * self.heater_tempe_return_min[heater])
+                    objs_revenue.append(1 * self.dual_heater_return_max[heater, t, k] * self.heater_tempe_return_max[heater])
+
+            for exchanger in range(self.heat_exchanger_num):
+                for t in range(T):
+                    objs_revenue.append(-1 * self.dual_exchanger_supply_min[exchanger, t, k] * self.exchanger_tempe_supply_min[exchanger])
+                    objs_revenue.append(1 * self.dual_exchanger_supply_max[exchanger, t, k] * self.exchanger_tempe_supply_max[exchanger])
+                    objs_revenue.append(-1 * self.dual_exchanger_return_min[exchanger, t, k] * self.exchanger_tempe_return_min[exchanger])
+                    objs_revenue.append(-1 * self.dual_exchanger_return_max[exchanger, t, k] * self.exchanger_tempe_return_max[exchanger])
+
+
+        self.jl = sum(objs_revenue)
+        expected_cost = []
+        for chp in range(self.chp_upper_num):
+            for t in range(T):
+                for k in range(K):
+                    expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.upper_chp_heat_quoted_price[chp, t])
+                    expected_cost.append(self.upper_chp_power_output[chp, t, k] * self.upper_chp_power_quoted_price[chp, t])
+        for gen in range(self.generator_upper_num):
+            for t in range(T):
+                for k in range(K):
+                    expected_cost.append(self.upper_generator_power_output[gen, t, k] * self.upper_generator_quoted_price[gen, t])
+        for chp in range(self.chp_lower_num):
+            for t in range(T):
+                objs_revenue.append(1 * self.chp_lower_coeff_const[chp])
+                objs_revenue.append(1 * self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k])
+                objs_revenue.append(1 * self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
+                objs_revenue.append(1 * self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k])
+                objs_revenue.append(1 * self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_heat_output[chp, t, k])
+                objs_revenue.append(1 * self.chp_lower_coeff_cross[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
+        for gen in range(self.generator_lower_num):
+            for t in range(T):
+                objs_revenue.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
+        self.jr = sum(expected_cost)
+
+
+
+
+
+
+
+
+
+
+
+

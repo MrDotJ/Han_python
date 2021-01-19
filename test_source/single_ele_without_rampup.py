@@ -96,6 +96,14 @@ class OneLayer:
     def build_power_system_original_and_dual_constraints(self):
         self.model.update()
         dual_expr = []
+
+        self.dual_expr_x_1 = []
+        self.dual_expr_x_2 = []
+        self.dual_expr_x_3 = []
+        self.dual_expr_x_4 = []
+        self.dual_expr_x_5 = []
+        self.dual_expr_x_6 = []
+
         for node in range(self.ele_node_num):
             for t in range(T):
                 for k in range(K):
@@ -108,6 +116,7 @@ class OneLayer:
                         sum(self.ele_load[                    np.where(self.ele_load_index == node), t].flatten())
                     self.dual_node_power_balance[node, t, k], expr1 = Complementary_equal(1 * cons_expr1, self.model, 'dual_node_power_balance_' + str(t) + '_' + str(node) + '_' + 'scenario' + str(k))
                     dual_expr.append(expr1)
+                    self.dual_expr_x_1.append(expr1)
 
         for line in range(self.ele_line_num):
             for t in range(T):
@@ -117,13 +126,15 @@ class OneLayer:
                                  self.line_power_flow[line, t, k]
                     self.dual_angle_line[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_angle_line_' + str(t) + 'line' + str(line) + 'scenario' + str(k))
                     dual_expr.append(expr1)
+                    self.dual_expr_x_2.append(expr1)
+
 
         for t in range(T):
             for k in range(K):
                 cons_expr1 = self.bus_angle[2, t, k]
                 self.dual_reference_angle[t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_reference_angle_' + str(t) + 'scenario' + str(k))
                 dual_expr.append(expr1)
-
+                self.dual_expr_x_3.append(expr1)
 
         for line in range(self.ele_line_num):
             for t in range(T):
@@ -134,6 +145,9 @@ class OneLayer:
                     self.dual_line_power_flow_less[line, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_line_power_flow_less' + str(t) + '_' + str(line) + 'scenario' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
+                    self.dual_expr_x_4.append(expr1)
+                    self.dual_expr_x_4.append(expr2)
+
 
         for gen in range(self.generator_upper_num):
             for t in range(T):
@@ -144,6 +158,9 @@ class OneLayer:
                     self.dual_upper_generator_power_output_max[gen, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_upper_generator_power_output_max' + str(t) + '_' + str(gen) + 'scenario' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
+                    self.dual_expr_x_5.append(expr1)
+                    self.dual_expr_x_5.append(expr2)
+
 
         for gen in range(self.generator_lower_num):
             for t in range(T):
@@ -154,6 +171,9 @@ class OneLayer:
                     self.dual_lower_generator_power_output_max[gen, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_generator_power_output_max' + str(t) + '_' + str(gen) + 'scenario' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
+                    self.dual_expr_x_6.append(expr1)
+                    self.dual_expr_x_6.append(expr2)
+
 
 
         self.dual_expression = self.dual_expression + sum(dual_expr)
@@ -240,6 +260,7 @@ class OneLayer:
         self.equivalent_generator_cost = obj_k_p
 
     def optimize(self, distribution):
+        self.model.setParam("IntegralityFocus", 1)
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         self.model.optimize()
         expected_cost = []
@@ -255,30 +276,3 @@ class OneLayer:
         return value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k
 
 
-
-objs = []
-for k in range(K):
-    for load in range(self.ele_load_num):
-        for t in range(T):
-            objs.append(1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
-    for line in range(self.ele_line_num):
-        for t in range(T):
-            objs.append(-1 * self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
-            objs.append(-1 * self.dual_line_power_flow_less[line, t, k] * self.ele_line_capacity[line])
-    for gen in range(self.generator_upper_num):
-        for t in range(T):
-            objs.append(self.dual_upper_generator_power_output_min[gen, t, k] * self.generator_upper_min[gen])
-            objs.append(-1 * self.dual_upper_generator_power_output_max[gen, t, k] * self.generator_upper_max[gen])
-    for gen in range(self.generator_lower_num):
-        for t in range(T):
-            objs.append(1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
-            objs.append(-1 * self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
-
-objs2 = []
-for k in range(K):
-    for gen in range(self.generator_upper_num):
-        for t in range(T):
-            objs2.append(self.upper_generator_quoted_price[gen, t] * self.upper_generator_power_output[gen, t, k])
-    for gen in range(self.generator_lower_num):
-        for t in range(T):
-            objs2.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])

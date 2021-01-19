@@ -1,7 +1,7 @@
 import gurobipy as gurobi
 import numpy as np
 
-M = 1e6
+M = 1e7
 
 
 class MyExpr:
@@ -68,7 +68,7 @@ def Complementary_great(expr, model, dual_var_name):  # expr should be greater t
 def Complementary_equal(expr, model, dual_var_name):
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
     var_dual = model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name=dual_var_name)
-    model.addConstr(1 * expr == 0)
+    model.addConstr(-1 * expr == 0)
     return var_dual, -1 * expr * var_dual
 
 

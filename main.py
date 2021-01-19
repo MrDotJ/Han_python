@@ -1,4 +1,4 @@
-from single_ele_without_rampup import OneLayer
+from model_with_scen_change_chp import OneLayer
 from second_stage import SecondLayer
 from config2 import get_config, empirical_distribution, confidence_level
 import numpy as np
