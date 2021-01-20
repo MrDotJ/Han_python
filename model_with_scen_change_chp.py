@@ -35,6 +35,7 @@ class OneLayer:
 
         self.wind_connection_index              = power_system['wind_connection_index']
         self.wind_output                        = power_system['wind_output']
+        self.wind_farm_num                      = power_system['wind_farm_num']
 
         # ------------ Heat System----------------
         self.heat_node_num                      = heat_system['node_num']
@@ -645,9 +646,15 @@ class OneLayer:
                     objs_revenue.append(self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
                     objs_revenue.append(self.dual_line_power_flow_less[line, t, k] * self.ele_line_capacity[line])
 
+            # power load part
             for load in range(self.ele_load_num):
                 for t in range(T):
                     objs_revenue.append(-1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
+
+            # wind output part
+            for wind in range(self.wind_farm_num):
+                for t in range(T):
+                    objs_revenue.append(self.dual_node_power_balance[self.wind_connection_index[wind], t, k] * self.wind_output[wind, k, t])
 
             for node in range(self.ele_node_num):
                 for t in range(T):
@@ -705,7 +712,7 @@ class OneLayer:
 
     def optimize(self, distribution):
         self.model.setParam("IntegralityFocus", 1)
-        self.model.setParam("NonConvex", 2)
+        # self.model.setParam("NonConvex", 2)
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         self.model.optimize()
 
@@ -731,9 +738,14 @@ class OneLayer:
     def sss(self):
         objs_revenue = []
         for k in range(K):
+            # power load output
             for load in range(self.ele_load_num):
                 for t in range(T):
                     objs_revenue.append(1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
+            # wind output part
+            for wind in range(self.wind_farm_num):
+                for t in range(T):
+                    objs_revenue.append(-1 * self.dual_node_power_balance[self.wind_connection_index[wind], t, k] * self.wind_output[wind, k, t])
             for line in range(self.ele_line_num):
                 for t in range(T):
                     objs_revenue.append(-1 * self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
