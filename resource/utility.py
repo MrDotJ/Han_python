@@ -91,7 +91,7 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
     expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * right_var[i] * right_var[i]
                                   for i in range(right_var_length)])
     model.addConstr(expr_left <= expr_right)
-
+    model.update()
     dual_expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * dual_left[i] * dual_left[i]
                                       for i in range(left_var_length)])
     dual_expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * dual_right[i] * dual_right[i]
