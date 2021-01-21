@@ -134,10 +134,12 @@ class OneLayer:
 
         # model
         self.model = gurobi.Model()
+
         self.upper_generator_quoted_price                   = None
         self.upper_chp_power_quoted_price                   = None
         self.upper_chp_heat_quoted_price                    = None
         self.upper_well_quoted_price                        = None
+
         self.upper_generator_quoted_price_tuple_dict        = None
         self.upper_chp_power_quoted_price_tuple_dict        = None
         self.upper_chp_heat_quoted_price_tuple_dict         = None

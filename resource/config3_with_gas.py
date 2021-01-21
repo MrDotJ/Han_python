@@ -1,6 +1,6 @@
 import numpy as np
 T = 2
-K = 1
+K = 2
 empirical_distribution = [1/K] * K
 confidence_level = 0.2
 
@@ -8,21 +8,21 @@ confidence_level = 0.2
 def get_config():
     #   Bus     P_max   P_min   Ramp_up   Ramp_down   Cost    bid_max
     upper_generator_info = np.array([
-        [0,      1.1,    0,       0.3,      0.3,       10,      20],
-        [3,      0.3,    0,       0.1,      0.1,       17,      34],
-        [2,      0.4,    0,       0.1,      0.1,       10,      20],
-        [4,      0.4,    0,       0.1,      0.1,       10,      20],
+        [0,      0.6,    0.0,       1.5,      1.5,       10,      20],
+        [3,      0.4,    0.0,       1.5,      1.5,       10,      34],
+        [2,      0.4,    0.0,       1.5,      1.5,       10,      20],
+        [4,      0.4,    0.0,       1.5,      1.5,       10,      20],
     ])
 
     lower_generator_info = np.array([
-        [0,      0.6,    0,       0.3,      0.3,       16],
-        [3,      0.4,    0,       0.2,      0.2,       18],
-        [4,      0.4,    0,       0.2,      0.2,       11]
+        [0,      0.4,    0.1,       1.5,      1.5,       16],
+        [3,      1.4,    0.1,       1.5,      1.5,       16],
+        [4,      1.3,    0.1,       1.5,      1.5,       16]
     ])
 
     wind_output = np.array([
         [
-            [1452, 1600, 1099, 1213, 939,  553,  371,  328,  370,  362,  477,  635,
+            [1452, 1452, 1099, 1213, 939,  553,  371,  328,  370,  362,  477,  635,
             728,  947,  1236, 1609, 1822, 1739, 1618, 1980, 2111, 1968, 1728, 1500],
             [1502, 1150, 1049, 1263, 989,  503,  421,  278,  420,  312,  527,  585,
             778,  897,  1286, 1559, 1872, 1689, 1668, 1930, 2161, 1918, 1778, 1450],
@@ -33,7 +33,7 @@ def get_config():
             [1442, 1190, 1089, 1203, 929, 543, 361, 318, 360, 352, 467, 625,
              718, 937, 1226, 1599, 1812, 1729, 1608, 1970, 2101, 1958, 1718, 1490]
         ]
-    ]) / 1000 * 0
+    ]) / 1000 * 0.1
 
 
     # bus
@@ -48,7 +48,8 @@ def get_config():
     ])
 
     power_load_demand_total = np.array([
-        2.625,  2.025, 2.37,  2.31,  2.325, 2.4,   2.595, 2.85,  3.075, 3.255, 3.42,  3.54,
+        2.5, 2.65, 2.05, 2.15, 2.25, 2.55, 2.35,
+        2.5,  2.625, 2.825,  3.125,  3.625, 3.4,   3.595, 2.85,  3.075, 3.255, 3.42,  3.54,
         3.63,   3.645, 3.72,  3.825, 3.84,  3.69,  3.675, 3.555, 3.555, 3.405, 3.015, 2.94, ])      *  1
 
     # Bus / total
@@ -60,12 +61,12 @@ def get_config():
 
     # Beginning node   Terminal node   Impedance   Line Capacity
     power_line_info = np.array([
-        [0,                   1,         0.0281,         2.9],
-        [0,                   3,         0.0304,         2.9],
-        [0,                   4,         0.0064,         3.9],
-        [1,                   2,         0.0108,         2.9],
-        [2,                   3,         0.0297,         4.1],
-        [3,                   4,         0.0297,         2.0],
+        [0,                   1,         0.0281,         12.9],
+        [0,                   3,         0.0304,         12.9],
+        [0,                   4,         0.0064,         13.9],
+        [1,                   2,         0.0108,         12.9],
+        [2,                   3,         0.0297,         14.1],
+        [3,                   4,         0.0297,         12.0],
     ])
 
     ##       0       1d       2d
@@ -105,7 +106,8 @@ def get_config():
         'load': (power_load_info[:, 1].reshape((-1, 1)).dot(power_load_demand_total.reshape((1, -1)))),
 
         'wind_connection_index': wind_connection_index.astype(np.int),
-        'wind_output': wind_output
+        'wind_output': wind_output,
+        'wind_farm_num': len(wind_connection_index)
     }
 
 
@@ -115,39 +117,39 @@ def get_config():
         # node         Hmin(MW)      Hmax(MW)       efficiency    Gen              Cost($ / MW)    Tsmin         Tsmax
         # a0           a1            a2             a3            a4               a5              heater     bid_power      bid_heat
         [
-          2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.0 * 0.6,      0,          1,              1],
+          20 * 0.6,    0 * 0.06,   15. * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10],
         [
-          2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.0 * 0.6,      0,          1,              1]
+          20 * 0.6,    0 * 0.06,   15. * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10]
     ])
 
     lower_chp_info = np.array([
         [
-           2650 * 0.6,  14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,      0.0 * 0.6,            0
+           2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
         ],
         [
-            2650 * 0.6, 14.5 * 0.6,   0.0345 * 0.6,  4.2 * 0.6,    0.03 * 0.6,       0.0 * 0.6,           0
+           2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
         ],
     ])
 
     upper_chp_POWER = np.array([
         [0.81,     2.97,    2.55,       0],
         [0.81,     2.97,    2.55,       0]
-    ])
+    ]) * 1
 
     upper_chp_HEAT = np.array([
         [0.528,     0.8,       0.45,     0],
         [0.528,     0.8,       0.45,     0]
-    ])
+    ]) * 1
 
     lower_chp_POWER = np.array([
         [0.247,     0.215,   0.081,    0.0],
         [0.247,     0.215,   0.081,    0.0]
-    ])
+    ]) * 1
 
     lower_chp_HEAT = np.array([
-        [0,         0.180,   1.048,    0],
-        [0,         0.180,   1.048,    0]
-    ])
+        [0.3,         0.180,   1.048,    0],
+        [0.3,         0.180,   1.048,    0]
+    ]) * 1
 
     heat_network_supply = np.array([
         # Beginning node Terminal node length(m)    flow(kg / h)
@@ -196,17 +198,19 @@ def get_config():
         [0],
     ])
 
-    heat_load = np.array([
-        50,          50,          48.06451613, 49.03225806, 49.03225806, 49.03225806, 48.06451613, 47.09677419,
+    heat_load = np.array([[
+        49,          50,          52,     47.8,     48,      49,      48.06451613,
+        47.09677419,
         45.16129032, 44.19354839, 43.22580645, 42.25806452, 41.29032258, 41.29032258, 41.29032258, 42.25806452,
-        43.22580645, 44.19354839, 44.19354839, 44.19354839, 45.16129032, 46.12903226, 47.09677419, 47.09677419]) / 50 * 0
+        43.22580645, 44.19354839, 44.19354839, 44.19354839, 45.16129032, 46.12903226, 47.09677419, 47.09677419],
+    ]) / 50 * 1.
 
     upper_chp_power_index = np.array([
-        2,2
+        2, 2
     ])
 
     lower_chp_power_index = np.array([
-        3,3
+        3, 3
     ])
 
     heat_system = {
@@ -253,28 +257,108 @@ def get_config():
 
 
 
-        'chp_upper_coeff_p_1':   upper_chp_info[:, 0].tolist(),
-        'chp_upper_coeff_p_2':   upper_chp_info[:, 1].tolist(),
-        'chp_upper_coeff_h_1':   upper_chp_info[:, 2].tolist(),
-        'chp_upper_coeff_h_2':   upper_chp_info[:, 3].tolist(),
-        'chp_upper_coeff_cross': upper_chp_info[:, 4].tolist(),
-        'chp_upper_coeff_const': upper_chp_info[:, 5].tolist(),
-        'chp_lower_coeff_p_1':   lower_chp_info[:, 0].tolist(),
-        'chp_lower_coeff_p_2':   lower_chp_info[:, 1].tolist(),
-        'chp_lower_coeff_h_1':   lower_chp_info[:, 2].tolist(),
-        'chp_lower_coeff_h_2':   lower_chp_info[:, 3].tolist(),
-        'chp_lower_coeff_cross': lower_chp_info[:, 4].tolist(),
-        'chp_lower_coeff_const': lower_chp_info[:, 5].tolist(),
+        'chp_upper_coeff_p_1':   upper_chp_info[:, 0],
+        'chp_upper_coeff_p_2':   upper_chp_info[:, 1],
+        'chp_upper_coeff_h_1':   upper_chp_info[:, 2],
+        'chp_upper_coeff_h_2':   upper_chp_info[:, 3],
+        'chp_upper_coeff_cross': upper_chp_info[:, 4],
+        'chp_upper_coeff_const': upper_chp_info[:, 5],
+        'chp_lower_coeff_p_1':   lower_chp_info[:, 0],
+        'chp_lower_coeff_p_2':   lower_chp_info[:, 1],
+        'chp_lower_coeff_h_1':   lower_chp_info[:, 2],
+        'chp_lower_coeff_h_2':   lower_chp_info[:, 3],
+        'chp_lower_coeff_cross': lower_chp_info[:, 4],
+        'chp_lower_coeff_const': lower_chp_info[:, 5],
     }
 
 
-    upper_well_info = np.array(
-        []
+    upper_well_info = np.array([
+    #  node    max(Sm3/h)      min(Sm3/h)     cost($/Sm3)    quoted_max($/Sm3)
+        [3,       3.36,            0,            0.22,             0.44],
+    ])
+    lower_well_info = np.array([
+        [3,       3.36,            0,            0.28 ],
+        [5,       6.03,            0,            0.17 ]
+    ])
+    gas_pipe_line_info = np.array([
+    #  start     end       weymouth     linepack   index   is_active
+        [1,       0,        0.193,       0.0271,     0,       0 ],
+        [3,       1,        0.188,       0.0301,     1,       0 ],
+        [4,       2,        0.085,       0.0369,     2,       0 ],
+        [4,       1,        0.123,       0.0331,     3,       0 ],
+        [5,       4,            0,            0,     4,       1 ],
+        [5,       4,        0.141,       0.0482,     5,       0 ],
+    ])
+
+    gas_node_info = np.array([
+    #   Node     MaxPressure(bar)   MinPressure(bar)
+        [0,           8.28,           7.34 ],
+        [1,           9.31,           7.34 ],
+        [2,           9.65,           7.34 ],
+        [3,          10.69,           7.34 ],
+        [4,          10.69,           7.34 ],
+        [5,          12.07,           7.34 ],
+    ])
+
+    compressor_info = np.array([
+    #  start         end           CompFact
+        [5,           4,              2 ],
+    ])
+
+    gas_load_total = np.array([
+         1,   1.1,  1.15, 1.2, 1.25, 1.15, 1.1,  1,   0.95, 0.9, 0.88, 0.85,
+         0.9, 0.95, 0.99, 1,   1.1,  1.05, 1.05, 1.1, 1.15, 1.1, 1,    0.95
+    ]) * 0.1
+
+    gas_load_info = np.array([
+    #   node     percent
+        [0,      0.5],
+        [1,      0.2],
+        [2,      0.3],
+    ])
+
+    chp_upper_connection_gas_index = np.array(
+        [0, 1]
     )
+    chp_lower_connection_gas_index = np.array(
+        [0, 1]
+    )
+    gas_system = {
+        'well_upper_num': len(upper_well_info),
+        'well_lower_num': len(lower_well_info),
+        'well_upper_quoted_price_max': upper_well_info[:, 4],
+        'well_upper_connection_index': upper_well_info[:, 0].astype(np.int),
+        'well_lower_connection_index': lower_well_info[:, 0].astype(np.int),
 
+        'well_upper_output_price': upper_well_info[:, 3],
+        'well_lower_output_price': lower_well_info[:, 3],
+        'well_upper_output_max': upper_well_info[:, 1],
+        'well_upper_output_min': upper_well_info[:, 2],
+        'well_lower_output_max': lower_well_info[:, 1],
+        'well_lower_output_min': lower_well_info[:, 2],
 
+        'gas_node_num': len(gas_node_info),
+        'gas_node_pressure_max': gas_node_info[:, 1],
+        'gas_node_pressure_min': gas_node_info[:, 2],
 
+        'gas_line_num': len(gas_pipe_line_info),
+        'gas_inactive_line_num': len(gas_pipe_line_info) - len(compressor_info),
+        'gas_active_line_num': len(compressor_info),
+        'gas_active_line': (gas_pipe_line_info[np.where(gas_pipe_line_info[:, 5] == 1), 4][0]).astype(np.int),
+        'gas_inactive_line': (gas_pipe_line_info[np.where(gas_pipe_line_info[:, 5] != 1), 4][0]).astype(np.int),
 
+        'weymouth': gas_pipe_line_info[:, 2],
+        'gas_linepack_coeff': gas_pipe_line_info[:, 3],
+        'gas_pipe_start_node': gas_pipe_line_info[:, 0].astype(np.int),
+        'gas_pipe_end_node': gas_pipe_line_info[:, 1].astype(np.int),
 
+        'gas_compressor_num': len(compressor_info),
+        'gas_compressor_coeff': compressor_info[:, 2],
 
-    return power_system, heat_system, chp_system
+        'gas_load_num': len(gas_load_info),
+        'gas_load': gas_load_info[:, 1].reshape((-1, 1)).dot(gas_load_total.reshape((1, -1))),
+        'gas_load_connection_index': gas_load_info[:, 0].astype(np.int),
+        'chp_upper_connection_gas_index': chp_upper_connection_gas_index.astype(np.int),
+        'chp_lower_connection_gas_index': chp_lower_connection_gas_index.astype(np.int)
+    }
+    return power_system, heat_system, chp_system, gas_system

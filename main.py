@@ -1,6 +1,6 @@
-from model_with_scen_change_chp import OneLayer
+from model_with_gas_new import OneLayer
 from second_stage import SecondLayer
-from config2 import get_config, empirical_distribution, confidence_level
+from config3_with_gas import get_config, empirical_distribution, confidence_level
 import numpy as np
 
 
@@ -33,7 +33,7 @@ def do_main():
 
 
 if __name__ == '__main__':
-    power_system_info, heat_system_info, chp_system_info = get_config()
-    first_layer = OneLayer(power_system_info, heat_system_info, chp_system_info)
+    power_system_info, heat_system_info, chp_system_info, gas_system_info = get_config()
+    first_layer = OneLayer(power_system_info, heat_system_info, chp_system_info, gas_system_info)
     second_layer = SecondLayer(empirical_distribution, confidence_level)
     do_main()
