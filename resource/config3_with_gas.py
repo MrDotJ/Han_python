@@ -1,6 +1,6 @@
 import numpy as np
-T = 2
-K = 2
+T = 1
+K = 1
 empirical_distribution = [1/K] * K
 confidence_level = 0.2
 
@@ -277,8 +277,7 @@ def get_config():
         [3,       3.36,            0,            0.22,             0.44],
     ])
     lower_well_info = np.array([
-        [3,       3.36,            0,            0.28 ],
-        [5,       6.03,            0,            0.17 ]
+        [4,       3.36,            0,            0.28 ],
     ])
     gas_pipe_line_info = np.array([
     #  start     end       weymouth     linepack   index   is_active
@@ -286,8 +285,6 @@ def get_config():
         [3,       1,        0.188,       0.0301,     1,       0 ],
         [4,       2,        0.085,       0.0369,     2,       0 ],
         [4,       1,        0.123,       0.0331,     3,       0 ],
-        [5,       4,            0,            0,     4,       1 ],
-        [5,       4,        0.141,       0.0482,     5,       0 ],
     ])
 
     gas_node_info = np.array([
@@ -297,18 +294,17 @@ def get_config():
         [2,           9.65,           7.34 ],
         [3,          10.69,           7.34 ],
         [4,          10.69,           7.34 ],
-        [5,          12.07,           7.34 ],
     ])
 
     compressor_info = np.array([
     #  start         end           CompFact
-        [5,           4,              2 ],
+        [4,           2,              2 ],
     ])
 
     gas_load_total = np.array([
          1,   1.1,  1.15, 1.2, 1.25, 1.15, 1.1,  1,   0.95, 0.9, 0.88, 0.85,
          0.9, 0.95, 0.99, 1,   1.1,  1.05, 1.05, 1.1, 1.15, 1.1, 1,    0.95
-    ]) * 0.
+    ]) * 0.1
 
     gas_load_info = np.array([
     #   node     percent

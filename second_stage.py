@@ -1,4 +1,4 @@
-from config2 import K
+from config3_with_gas import K
 from utility import *
 
 

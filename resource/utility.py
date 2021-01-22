@@ -124,7 +124,7 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
 
     lagrange_sum = gurobi.quicksum([left_coeff[i] * left_var[i] * dual_left[i] for i in range(left_var_length)]) + \
                    gurobi.quicksum([right_coeff[i] * right_var[i] * dual_right[i] for i in range(right_var_length)])
-    return dual_left, dual_right, constr_original, constr_dual, lagrange_sum
+    return dual_left, dual_right, constr_original, constr_dual, -1*lagrange_sum
 
 
 def tonp(vars_gur) -> np.array:
