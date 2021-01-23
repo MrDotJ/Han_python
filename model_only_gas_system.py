@@ -81,9 +81,9 @@ class OneLayer:
         self.gas_flow_in                        = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_flow_in'                                                                  ) )
         self.gas_flow_out                       = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_flow_out'                                                                 ) )
         self.gas_linepack                       = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_linepack'                                                                 ) )
-        self.aux_weymouth_left                  = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_left_auxiliary', lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY ) )
-        self.aux_weymouth_right_1               = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_right_auxiliary1', lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY ) )
-        self.aux_weymouth_right_2               = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_right_auxiliary2', lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY ) )
+        self.aux_weymouth_left                  = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_left_auxiliary'                                                      ) )
+        #self.aux_weymouth_right_1               = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_right_auxiliary1', lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY ) )
+        #self.aux_weymouth_right_2               = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_right_auxiliary2', lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY ) )
         self.pccp_relax                         = tonp( self.model.addVars(self.gas_line_num,          T, K, name='pccp_relax'))
 
         self.all_lower_level_vars.extend(self.upper_gas_well_output.flatten().tolist())
@@ -118,7 +118,7 @@ class OneLayer:
                         sum(self.gas_flow_out[           np.where(self.gas_pipe_end_node == node), t, k].flatten()) -  \
                         sum(self.gas_flow_in[            np.where(self.gas_pipe_start_node == node), t, k].flatten()) -   \
                         sum(self.gas_load[               np.where(self.gas_load_connection_index == node), t].flatten())
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k))
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_gas_balance_T_' + str(t) + '_node_' + str(node) + '_S_' + str(k))
                     dual_expr.append(expr1)
 
         for line in self.gas_inactive_line:
@@ -163,8 +163,8 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = self.upper_gas_well_output[well, t, k] - self.well_upper_output_min[well]
                     cons_expr2 = -1 * self.upper_gas_well_output[well, t, k] + self.well_upper_output_max[well]
-                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_upper_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
-                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_upper_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_upper_well_output_min_' + str(well) + '_T_' + str(t) + '_S_' + str(k))
+                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_upper_well_output_max_' + str(well) + '_T_' + str(t) + '_S_' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
 
@@ -173,8 +173,8 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = self.lower_gas_well_output[well, t, k] - self.well_lower_output_min[well]
                     cons_expr2 = -1 * self.lower_gas_well_output[well, t, k] + self.well_lower_output_max[well]
-                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
-                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_well_output_min_' + str(well) + '_T_' + str(t) + '_S_' + str(k))
+                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_well_output_max_' + str(well) + '_T_' + str(t) + '_S_' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
 
@@ -183,8 +183,8 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = self.gas_node_pressure[node, t, k] - self.gas_node_pressure_min[node]
                     cons_expr2 = self.gas_node_pressure_max[node] - self.gas_node_pressure[node, t, k]
-                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_node_pressure_min_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
-                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_node_pressure_max_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_node_pressure_min_' + str(node) + '_T_' + str(t) + '_S_' + str(k))
+                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_node_pressure_max_' + str(node) + '_T_' + str(t) + '_S_' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
 
@@ -199,17 +199,20 @@ class OneLayer:
             for t in range(T):
                 for k in range(K):
                     cons_expr1 = self.aux_weymouth_left[line, t, k] - (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'weymouth_relax_left_auxiliary_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_weymouth_relax_left_auxiliary_' + str(line) + '_T_' + str(t) + '_S_' + str(k))
                     _, _, expr2 = Complementary_soc(
                         [1, sqrt(self.gas_weymouth[line])],
                         [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
                         [sqrt(self.gas_weymouth[line])],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
                         self.model,
-                        'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                        'weymouth_relax_left_soc_line_' + str(line) + '_T_' + str(t) + '_S_' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
         self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
+        self.model.update()
+        cao = self.model.getQConstrs()
+        aicaonima = 1
 
     # noinspection PyArgumentList
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
@@ -259,7 +262,8 @@ class OneLayer:
         my_expr = MyExpr(self.dual_expression_basic + self.dual_expression_additional + self.lower_objective)
         for var in self.all_lower_level_vars:
             expr = my_expr.getCoeff(var)
-            my_expr.addConstr(expr, self.model)
+            my_expr.addConstr(expr, self.model, var.VarName)
+
 
     def build_upper_constraints(self):
         self.do_nothing = 1
@@ -283,7 +287,7 @@ class OneLayer:
 
     def optimize(self, distribution):
         self.model.setParam("IntegralityFocus", 1)
-        # self.model.setParam("NonConvex", 2)
+        self.model.setParam("NonConvex", 2)
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         self.model.optimize()
 

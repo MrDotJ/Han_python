@@ -1,5 +1,5 @@
 from resource.utility import *
-from resource.config2 import T, K
+from resource.config3_with_gas import T, K
 from math import sqrt
 
 
@@ -602,17 +602,17 @@ class OneLayer:
                     _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k))
                     dual_expr.append(expr1)
 
-        # for line in self.gas_inactive_line:
-        #     for t in range(0, T-1):
-        #         for k in range(K):
-        #             cons_expr1 = self.gas_linepack[line, t, k] - self.gas_linepack_coeff[line] * (
-        #                     self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] + self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]) / 2
-        #             cons_expr2 = self.gas_linepack[line, t+1, k] - self.gas_linepack[line, t, k] - self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
-        #             _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-        #             _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-        #             dual_expr.append(expr1)
-        #             dual_expr.append(expr2)
-        #
+        for line in self.gas_inactive_line:
+            for t in range(0, T-1):
+                for k in range(K):
+                    cons_expr1 = self.gas_linepack[line, t, k] - self.gas_linepack_coeff[line] * (
+                            self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] + self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]) / 2
+                    cons_expr2 = self.gas_linepack[line, t+1, k] - self.gas_linepack[line, t, k] - self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+
         for line in self.gas_inactive_line:
             for t in [T-1]:
                 for k in range(K):
@@ -659,22 +659,22 @@ class OneLayer:
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
 
-        # for node in range(self.gas_node_num):
-        #     for t in range(T):
-        #         for k in range(K):
-        #             cons_expr1 = self.gas_node_pressure[node, t, k] - self.gas_node_pressure_min[node]
-        #             cons_expr2 = self.gas_node_pressure_max[node] - self.gas_node_pressure[node, t, k]
-        #             _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_node_pressure_min_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
-        #             _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_node_pressure_max_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
-        #             dual_expr.append(expr1)
-        #             dual_expr.append(expr2)
+        for node in range(self.gas_node_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.gas_node_pressure[node, t, k] - self.gas_node_pressure_min[node]
+                    cons_expr2 = self.gas_node_pressure_max[node] - self.gas_node_pressure[node, t, k]
+                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_node_pressure_min_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
+                    _, expr2 = Complementary_great(cons_expr2, self.model, 'dual_node_pressure_max_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+                    dual_expr.append(expr2)
 
-        # for line in range(self.gas_line_num):
-        #     for t in range(T):
-        #         for k in range(K):
-        #             cons_expr1 = self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
-        #             _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_gas_flow_great_zero_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-        #             dual_expr.append(expr1)
+        for line in range(self.gas_line_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
+                    _, expr1 = Complementary_great(cons_expr1, self.model, 'dual_gas_flow_great_zero_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
 
         for line in self.gas_inactive_line:
             for t in range(T):
@@ -763,7 +763,7 @@ class OneLayer:
         my_expr = MyExpr(self.dual_expression_basic + self.dual_expression_additional + self.lower_objective)
         for var in self.all_lower_level_vars:
             expr = my_expr.getCoeff(var)
-            my_expr.addConstr(expr, self.model)
+            my_expr.addConstr(expr, self.model, var.VarName)
 
     def build_upper_constraints(self):
         for gen in range(self.generator_upper_num):
@@ -897,7 +897,7 @@ class OneLayer:
 
     def optimize(self, distribution):
         self.model.setParam("IntegralityFocus", 1)
-        # self.model.setParam("NonConvex", 2)
+        self.model.setParam("NonConvex", 2)
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         self.model.optimize()
 

@@ -1,4 +1,4 @@
-from model_only_gas_system import OneLayer
+from model_with_gas_new import OneLayer
 from second_stage import SecondLayer
 from config3_with_gas import get_config, empirical_distribution, confidence_level
 import numpy as np

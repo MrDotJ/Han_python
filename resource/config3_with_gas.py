@@ -274,43 +274,41 @@ def get_config():
 
     upper_well_info = np.array([
     #  node    max(Sm3/h)      min(Sm3/h)     cost($/Sm3)    quoted_max($/Sm3)
-        [3,       3.36,            0,            0.22,             0.44],
+        [2,       3.36,            0,            0.22,             0.44],
     ])
     lower_well_info = np.array([
-        [4,       3.36,            0,            0.28 ],
+        [3,       3.36,            0,            0.28 ],
     ])
     gas_pipe_line_info = np.array([
     #  start     end       weymouth     linepack   index   is_active
-        [1,       0,        0.193,       0.0271,     0,       0 ],
-        [3,       1,        0.188,       0.0301,     1,       0 ],
-        [4,       2,        0.085,       0.0369,     2,       0 ],
-        [4,       1,        0.123,       0.0331,     3,       0 ],
+        [2,       1,        0.193,       0.0271,     0,       0 ],
+        [3,       1,        0.193,       0.0271,     1,       0 ],
+        [1,       0,        0.193,       0.0271,     2,       0 ],
     ])
 
     gas_node_info = np.array([
     #   Node     MaxPressure(bar)   MinPressure(bar)
         [0,           8.28,           7.34 ],
-        [1,           9.31,           7.34 ],
-        [2,           9.65,           7.34 ],
-        [3,          10.69,           7.34 ],
-        [4,          10.69,           7.34 ],
+        [1,           8.28,           7.34 ],
+        [2,           8.28,           7.34 ],
+        [3,           8.28,           7.34 ],
     ])
 
     compressor_info = np.array([
     #  start         end           CompFact
-        [4,           2,              2 ],
+    #    [2,           1,              2 ],
     ])
 
     gas_load_total = np.array([
          1,   1.1,  1.15, 1.2, 1.25, 1.15, 1.1,  1,   0.95, 0.9, 0.88, 0.85,
          0.9, 0.95, 0.99, 1,   1.1,  1.05, 1.05, 1.1, 1.15, 1.1, 1,    0.95
-    ]) * 0.1
+    ]) * 1
 
     gas_load_info = np.array([
     #   node     percent
         [0,      0.5],
-        [1,      0.2],
-        [2,      0.3],
+        [0,      0.2],
+        [0,      0.3],
     ])
 
     chp_upper_connection_gas_index = np.array(
@@ -349,7 +347,7 @@ def get_config():
         'gas_pipe_end_node': gas_pipe_line_info[:, 1].astype(np.int),
 
         'gas_compressor_num': len(compressor_info),
-        'gas_compressor_coeff': compressor_info[:, 2],
+        'gas_compressor_coeff': [],#compressor_info[:, 2],
 
         'gas_load_num': len(gas_load_info),
         'gas_load': gas_load_info[:, 1].reshape((-1, 1)).dot(gas_load_total.reshape((1, -1))),

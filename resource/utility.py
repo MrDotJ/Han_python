@@ -50,8 +50,8 @@ class MyExpr:
                 coeff_quad.append(self.quad_vars_1[i] * self.quad_coeff[i])
         return gurobi.quicksum(coeff_line) + gurobi.quicksum(coeff_quad)
 
-    def addConstr(self, expr, model):
-        model.addConstr(expr == 0)
+    def addConstr(self, expr, model, name):
+        model.addConstr(expr == 0, name= name)
 
 
 def Complementary_great(expr, model, dual_var_name):  # expr should be greater than zero
@@ -83,20 +83,19 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
     left_var_length = len(left_coeff)
     right_var_length = len(right_coeff)
     dual_left = model.addVars(left_var_length, lb=-1*gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY,
-                              name=dual_var_name + 'left')
+                              name=dual_var_name + 'dual-left')
     dual_right = model.addVars(right_var_length, lb=-1*gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY,
-                               name=dual_var_name + 'right')
+                               name=dual_var_name + 'dual-right')
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
                                  for i in range(left_var_length)])
     expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * right_var[i] * right_var[i]
                                   for i in range(right_var_length)])
-    model.addConstr(expr_left <= expr_right)
-    model.update()
+    model.addConstr(lhs=expr_left, sense=gurobi.GRB.LESS_EQUAL, rhs=expr_right, name=dual_var_name+'con_original')
     dual_expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * dual_left[i] * dual_left[i]
                                       for i in range(left_var_length)])
     dual_expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * dual_right[i] * dual_right[i]
                                        for i in range(right_var_length)])
-    model.addConstr(dual_expr_left <= dual_expr_right)
+    model.addConstr(lhs=dual_expr_left, sense=gurobi.GRB.LESS_EQUAL, rhs=dual_expr_right, name=dual_var_name+'con_dual')
 
     lagrange_sum = gurobi.quicksum([left_coeff[i] * left_var[i] * dual_left[i] for i in range(left_var_length)]) + \
                    gurobi.quicksum([right_coeff[i] * right_var[i] * dual_right[i] for i in range(right_var_length)])
