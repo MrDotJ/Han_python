@@ -51,7 +51,7 @@ class MyExpr:
         return gurobi.quicksum(coeff_line) + gurobi.quicksum(coeff_quad)
 
     def addConstr(self, expr, model, name):
-        model.addConstr(expr == 0, name= name)
+        model.addConstr(expr == 0, name=name)
 
 
 def Complementary_great(expr, model, dual_var_name):  # expr should be greater than zero
@@ -99,7 +99,9 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
 
     lagrange_sum = gurobi.quicksum([left_coeff[i] * left_var[i] * dual_left[i] for i in range(left_var_length)]) + \
                    gurobi.quicksum([right_coeff[i] * right_var[i] * dual_right[i] for i in range(right_var_length)])
-    return dual_left, dual_right, lagrange_sum
+    model.addConstr(lagrange_sum == 0, name=dual_var_name + 'lagrange_zero')
+
+    return dual_left, dual_right, -1 * lagrange_sum
 
 
 def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, dual_var_name):
@@ -123,6 +125,8 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
 
     lagrange_sum = gurobi.quicksum([left_coeff[i] * left_var[i] * dual_left[i] for i in range(left_var_length)]) + \
                    gurobi.quicksum([right_coeff[i] * right_var[i] * dual_right[i] for i in range(right_var_length)])
+    model.addConstr(lagrange_sum == 0, name=dual_var_name + 'lagrange_zero')
+
     return dual_left, dual_right, constr_original, constr_dual, -1*lagrange_sum
 
 

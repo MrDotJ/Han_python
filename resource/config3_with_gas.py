@@ -274,10 +274,10 @@ def get_config():
 
     upper_well_info = np.array([
     #  node    max(Sm3/h)      min(Sm3/h)     cost($/Sm3)    quoted_max($/Sm3)
-        [2,       3.36,            0,            0.22,             0.44],
+        [2,       3.36,            0,            2.2,             4.4],
     ])
     lower_well_info = np.array([
-        [3,       3.36,            0,            0.28 ],
+        [3,       0.336,            0,           2.8 ],
     ])
     gas_pipe_line_info = np.array([
     #  start     end       weymouth     linepack   index   is_active

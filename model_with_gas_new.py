@@ -264,7 +264,7 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.bus_angle.flatten().tolist())
 
     def build_gas_system(self):
-        self.upper_well_quoted_price_tuple_dict   = self.model.addVars(self.well_upper_num, T, K, name='upper_gas_quoted_price')
+        self.upper_well_quoted_price_tuple_dict   = self.model.addVars(self.well_upper_num, T, name='upper_gas_quoted_price')
         self.upper_well_quoted_price              = tonp( self.upper_well_quoted_price_tuple_dict)
 
         self.upper_gas_well_output                = tonp( self.model.addVars(self.well_upper_num,        T, K, name='upper_well_output'                                                               ) )
@@ -725,6 +725,7 @@ class OneLayer:
 
     # noinspection PyArgumentList
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
+        return
         self.model.remove(self.old_vars_constraints)
         self.old_vars_constraints = []
         dual_expr = []
@@ -788,6 +789,17 @@ class OneLayer:
                         self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, time, k] +
                         self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, time, k] * self.lower_chp_heat_output[chp, time, k] +
                         self.chp_lower_coeff_cross[chp] * self.lower_chp_power_output[chp, time, k] * self.lower_chp_heat_output[chp, time, k])
+        for well in range(self.well_upper_num):
+            for time in range(T):
+                for k in range(K):
+                    lower_objs.append(
+                        self.upper_well_quoted_price[well, time] * self.upper_gas_well_output[well, time, k])
+        for well in range(self.well_lower_num):
+            for time in range(T):
+                for k in range(K):
+                    lower_objs.append(
+                        self.well_lower_output_price[well] * self.lower_gas_well_output[well, time, k])
+
         self.lower_objective = sum(lower_objs)
 
     def build_kkt_derivative_constraints(self):
@@ -821,6 +833,15 @@ class OneLayer:
                     rhs=self.upper_chp_heat_quoted_price_max[chp][t],
                     sense=gurobi.GRB.LESS_EQUAL,
                     name='upper_chp_heat_quoted_price_max' + str(t) + 'chp_' + str(chp)
+                )
+
+        for well in range(self.well_upper_num):
+            for t in range(T):
+                self.model.addConstr(
+                    lhs=self.upper_well_quoted_price_tuple_dict[well, t],
+                    rhs=self.well_upper_quoted_price_max[well],
+                    sense=gurobi.GRB.LESS_EQUAL,
+                    name='upper_gas_well_quoted_price_max' + str(t) + '_well_' + str(well)
                 )
 
     def xxxxxxxbuild_upper_objectivexxx(self):
@@ -879,19 +900,19 @@ class OneLayer:
                 for t in range(T):
                     objs_cost.append(self.chp_upper_coeff_const[chp])
                     objs_cost.append(self.chp_upper_coeff_p_1[chp] * self.upper_chp_power_output[chp, t, k])
-                    #objs_cost.append(self.chp_upper_coeff_p_2[chp] * self.upper_chp_power_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
+                    objs_cost.append(self.chp_upper_coeff_p_2[chp] * self.upper_chp_power_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
                     objs_cost.append(self.chp_upper_coeff_h_1[chp] * self.upper_chp_heat_output[chp, t, k])
-                    #objs_cost.append(self.chp_upper_coeff_h_2[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_heat_output[chp, t, k])
-                    #objs_cost.append(self.chp_upper_coeff_cross[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
+                    objs_cost.append(self.chp_upper_coeff_h_2[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_heat_output[chp, t, k])
+                    objs_cost.append(self.chp_upper_coeff_cross[chp] * self.upper_chp_heat_output[chp, t, k] * self.upper_chp_power_output[chp, t, k])
 
             for chp in range(self.chp_lower_num):
                 for t in range(T):
                     objs_revenue.append(self.chp_lower_coeff_const[chp])
                     objs_revenue.append(self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k])
-                    #objs_revenue.append(self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
+                    objs_revenue.append(self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
                     objs_revenue.append(self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k])
-                    #objs_revenue.append(self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_heat_output[chp, t, k])
-                    #objs_revenue.append(self.chp_lower_coeff_cross[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
+                    objs_revenue.append(self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_heat_output[chp, t, k])
+                    objs_revenue.append(self.chp_lower_coeff_cross[chp] * self.lower_chp_heat_output[chp, t, k] * self.lower_chp_power_output[chp, t, k])
 
             for exchanger in range(self.heat_exchanger_num):
                 for t in range(T):
@@ -944,8 +965,8 @@ class OneLayer:
 
     def optimize(self, distribution):
         self.model.setParam("IntegralityFocus", 1)
-        # self.model.setParam("NonConvex", 2)
-        self.model.setParam("OutputFlag", 0)
+        self.model.setParam("NonConvex", 2)
+        #self.model.setParam("OutputFlag", 0)
 
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         self.model.optimize()
