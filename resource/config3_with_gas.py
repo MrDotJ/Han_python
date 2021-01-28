@@ -326,9 +326,9 @@ def get_config():
 
         'well_upper_output_price': upper_well_info[:, 3],
         'well_lower_output_price': lower_well_info[:, 3],
-        'well_upper_output_max': upper_well_info[:, 1] * 10,
+        'well_upper_output_max': upper_well_info[:, 1],
         'well_upper_output_min': upper_well_info[:, 2],
-        'well_lower_output_max': lower_well_info[:, 1] * 10,
+        'well_lower_output_max': lower_well_info[:, 1],
         'well_lower_output_min': lower_well_info[:, 2],
 
         'gas_node_num': len(gas_node_info),
@@ -342,7 +342,7 @@ def get_config():
         'gas_inactive_line': (gas_pipe_line_info[np.where(gas_pipe_line_info[:, 5] != 1), 4][0]).astype(np.int),
 
         'weymouth': gas_pipe_line_info[:, 2],
-        'gas_linepack_coeff': gas_pipe_line_info[:, 3] * 0,
+        'gas_linepack_coeff': gas_pipe_line_info[:, 3],
         'gas_pipe_start_node': gas_pipe_line_info[:, 0].astype(np.int),
         'gas_pipe_end_node': gas_pipe_line_info[:, 1].astype(np.int),
 

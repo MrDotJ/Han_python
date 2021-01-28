@@ -2,7 +2,7 @@ import gurobipy as gurobi
 import numpy as np
 
 M = 1e7
-
+INFINITY = gurobi.GRB.INFINITY
 
 class MyExpr:
     def __init__(self, quad_expr: gurobi.QuadExpr):
@@ -67,14 +67,14 @@ def Complementary_great(expr, model, dual_var_name):  # expr should be greater t
 
 def Complementary_equal(expr, model, dual_var_name):
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
-    var_dual = model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name=dual_var_name)
+    var_dual = model.addVar(lb=-1 * INFINITY, ub=INFINITY, name=dual_var_name)
     model.addConstr(-1 * expr == 0)
     return var_dual, -1 * expr * var_dual
 
 
 def Complementary_equal_plus(expr, model, dual_var_name):
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
-    var_dual = model.addVar(lb=-1 * gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY, name=dual_var_name)
+    var_dual = model.addVar(lb=-1 * INFINITY, ub=INFINITY, name=dual_var_name)
     constr = model.addConstr(-1 * expr == 0)
     return var_dual, constr, -1 * expr * var_dual
 
@@ -82,9 +82,9 @@ def Complementary_equal_plus(expr, model, dual_var_name):
 def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_var_name):
     left_var_length = len(left_coeff)
     right_var_length = len(right_coeff)
-    dual_left = model.addVars(left_var_length, lb=-1*gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY,
+    dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
                               name=dual_var_name + 'dual-left')
-    dual_right = model.addVars(right_var_length, lb=-1*gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY,
+    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
                                name=dual_var_name + 'dual-right')
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
                                  for i in range(left_var_length)])
@@ -105,9 +105,9 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
 def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, dual_var_name):
     left_var_length = len(left_coeff)
     right_var_length = len(right_coeff)
-    dual_left = model.addVars(left_var_length, lb=-1*gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY,
+    dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
                               name=dual_var_name + 'left')
-    dual_right = model.addVars(right_var_length, lb=-1*gurobi.GRB.INFINITY, ub=gurobi.GRB.INFINITY,
+    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
                                name=dual_var_name + 'right')
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
                                  for i in range(left_var_length)])

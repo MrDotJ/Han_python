@@ -20,6 +20,7 @@ class SecondLayer:
 
     def optimize(self, obj_k):
         self.model.update()
+        self.model.setParam("OutputFlag", 0)
         self.model.setObjective((self.distribution.reshape((1, -1)).dot(np.array(obj_k).reshape((-1, 1))))[0][0])
         self.model.optimize()
         return to_value(self.distribution_tuple_list)

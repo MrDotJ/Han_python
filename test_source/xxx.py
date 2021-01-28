@@ -34,3 +34,17 @@ model.addConstr(x*x + y*y - z*z <= 0)
 model.addConstr(x1*x1 + y1*y1 - z1*z1 <= 0)
 model.addConstr(x == x1)
 model.optimize()
+
+
+import gurobipy as gurobi
+model = gurobi.Model()
+x = model.addVar(lb=-1 * 100000, ub=100000)
+y = model.addVar(lb=-1 * 100000, ub=100000)
+z = model.addVar(lb=-1 * 100000, ub=100000)
+x1 = model.addVar(lb=-1 * 100000, ub=100000)
+y1 = model.addVar(lb=-1 * 100000, ub=100000)
+z1 = model.addVar(lb=-1 * 100000, ub=100000)
+model.addConstr(x*x + y*y - z*z <= 0)
+model.addConstr(x1*x1 + y1*y1 - z1*z1 <= 0)
+model.addConstr(x == x1)
+model.optimize()
