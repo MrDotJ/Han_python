@@ -280,10 +280,10 @@ def get_config():
         [3,       0.336,            0,           2.8 ],
     ])
     gas_pipe_line_info = np.array([
-    #  start     end       weymouth     linepack   index   is_active
-        [2,       1,        0.193,       0.0271,     0,       0 ],
-        [3,       1,        0.193,       0.0271,     1,       0 ],
-        [1,       0,        0.193,       0.0271,     2,       0 ],
+    #  start     end       weymouth     linepack   index   is_active   flow_min   flow_max
+        [2,       1,        0.193,       0.0271,     0,       0,           0,        2 ],
+        [3,       1,        0.193,       0.0271,     1,       0,           0,        2 ],
+        [1,       0,        0.193,       0.0271,     2,       0,           0,        2 ],
     ])
 
     gas_node_info = np.array([
@@ -340,6 +340,11 @@ def get_config():
         'gas_active_line_num': len(compressor_info),
         'gas_active_line': (gas_pipe_line_info[np.where(gas_pipe_line_info[:, 5] == 1), 4][0]).astype(np.int),
         'gas_inactive_line': (gas_pipe_line_info[np.where(gas_pipe_line_info[:, 5] != 1), 4][0]).astype(np.int),
+
+        'gas_flow_in_min' : gas_pipe_line_info[:, 6],
+        'gas_flow_in_max' : gas_pipe_line_info[:, 7],
+        'gas_flow_out_min': gas_pipe_line_info[:, 6],
+        'gas_flow_out_max': gas_pipe_line_info[:, 7],
 
         'weymouth': gas_pipe_line_info[:, 2],
         'gas_linepack_coeff': gas_pipe_line_info[:, 3],
