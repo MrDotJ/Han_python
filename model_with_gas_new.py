@@ -224,8 +224,8 @@ class OneLayer:
         self.dual_compressor_pressure_up                    = None
         self.dual_well_upper_output_min                     = None
         self.dual_well_upper_output_max                     = None
-        self.dual_well_lower_output_min                     = None
-        self.dual_well_lower_output_max                     = None
+        self.dual_lower_well_output_min                     = None
+        self.dual_lower_well_output_max                     = None
         self.dual_gas_node_pressure_min                     = None
         self.dual_gas_node_pressure_max                     = None
         self.dual_gas_flow_in_and_out_great_zero            = None
@@ -294,8 +294,8 @@ class OneLayer:
         self.dual_compressor_pressure_up          = np.empty((self.gas_line_num,           T, K, ), dtype=object) 
         self.dual_well_upper_output_min           = np.empty((self.well_upper_num,         T, K, ), dtype=object) 
         self.dual_well_upper_output_max           = np.empty((self.well_upper_num,         T, K, ), dtype=object) 
-        self.dual_well_lower_output_min           = np.empty((self.well_lower_num,         T, K, ), dtype=object) 
-        self.dual_well_lower_output_max           = np.empty((self.well_lower_num,         T, K, ), dtype=object) 
+        self.dual_lower_well_output_min           = np.empty((self.well_lower_num,         T, K, ), dtype=object) 
+        self.dual_lower_well_output_max           = np.empty((self.well_lower_num,         T, K, ), dtype=object) 
         self.dual_gas_node_pressure_min           = np.empty((self.gas_node_num,           T, K, ), dtype=object) 
         self.dual_gas_node_pressure_max           = np.empty((self.gas_node_num,           T, K, ), dtype=object) 
         self.dual_gas_flow_in_and_out_great_zero  = np.empty((self.gas_line_num,           T, K, ), dtype=object)    
@@ -698,8 +698,8 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = self.lower_gas_well_output[well, t, k] - self.well_lower_output_min[well]
                     cons_expr2 = -1 * self.lower_gas_well_output[well, t, k] + self.well_lower_output_max[well]
-                    self.dual_well_lower_output_min[well, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
-                    self.dual_well_lower_output_max[well, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    self.dual_lower_well_output_min[well, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    self.dual_lower_well_output_max[well, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
 
@@ -821,13 +821,11 @@ class OneLayer:
         for well in range(self.well_upper_num):
             for time in range(T):
                 for k in range(K):
-                    lower_objs.append(
-                        self.upper_well_quoted_price[well, time] * self.upper_gas_well_output[well, time, k])
+                    lower_objs.append(self.upper_well_quoted_price[well, time] * self.upper_gas_well_output[well, time, k])
         for well in range(self.well_lower_num):
             for time in range(T):
                 for k in range(K):
-                    lower_objs.append(
-                        self.well_lower_cost[well] * self.lower_gas_well_output[well, time, k])
+                    lower_objs.append(self.well_lower_cost[well] * self.lower_gas_well_output[well, time, k])
 
         self.lower_objective = sum(lower_objs)
 
@@ -982,8 +980,8 @@ class OneLayer:
 
             for well in range(self.well_lower_num):
                 for t in range(T):
-                    objs_revenue.append(-1 * self.dual_well_lower_output_min[well, t, k] * self.well_lower_output_min[well])
-                    objs_revenue.append(1 * self.dual_well_lower_output_max[well, t, k] * self.well_lower_output_max[well])
+                    objs_revenue.append(-1 * self.dual_lower_well_output_min[well, t, k] * self.well_lower_output_min[well])
+                    objs_revenue.append(1 * self.dual_lower_well_output_max[well, t, k] * self.well_lower_output_max[well])
 
             for node in range(self.gas_node_num):
                 for t in range(T):
