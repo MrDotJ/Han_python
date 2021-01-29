@@ -243,6 +243,7 @@ class OneLayer:
         self.equivalent_cost                                = 0
         self.equivalent_revenue                             = 0
         self.old_vars_constraints                           = []
+        self.objection_aux_update                           = []
 
     def build_power_system(self):
         self.upper_generator_quoted_price_tuple_dict      = self.model.addVars(self.generator_upper_num, T, lb=0,                       name='upper_generator_quoted_price')
@@ -754,13 +755,15 @@ class OneLayer:
 
     # noinspection PyArgumentList
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
-        return
+        # return
+        self.objection_aux_update = []
         self.model.remove(self.old_vars_constraints)
         self.old_vars_constraints = []
         dual_expr = []
-        for line in self.gas_inactive_line:
-            for t in range(T):
-                for k in range(K):
+        for k in range(K):
+            aux_update_k = []
+            for line in self.gas_inactive_line:
+                for t in range(T):
                     k1 = self.gas_weymouth[line]
                     k2 = flow_in_old[line, t, k] + flow_out_old[line, t, k]
                     k3 = (flow_in_old[line, t, k] + flow_out_old[line, t, k])**2 / 4
@@ -789,6 +792,9 @@ class OneLayer:
                     self.old_vars_constraints.extend([dual_vars1, dual_vars2, dual_left, dual_right])
                     self.old_vars_constraints.extend([constr1, constr2, constr_original, constr_dual])
                     dual_expr.extend([expr1, expr2, expr3])
+                    aux_update_k.append((-1 * r[0] - 1) * dual_vars1)
+                    aux_update_k.append((-1 * r[0] + 1) * dual_vars1)
+            self.objection_aux_update.append(sum(aux_update_k))
         self.dual_expression_additional = sum(dual_expr)
         self.model.update()
 
@@ -964,29 +970,38 @@ class OneLayer:
                         objs_revenue.append(1 * self.dual_lower_chp_point_less_one[chp, point, t, k])
                     objs_revenue.append(-1 * self.dual_lower_chp_point_sum_one[chp, t, k])
 
+            # TODO: change to minus - plus - minus - plus
             for heater in range(self.heat_heater_num):
                 for t in range(T):
-                    objs_revenue.append(1 * self.dual_heater_supply_min[heater, t, k] * self.heater_tempe_supply_min[heater])
-                    objs_revenue.append(-1 * self.dual_heater_supply_max[heater, t, k] * self.heater_tempe_supply_max[heater])
-                    objs_revenue.append(1 * self.dual_heater_return_min[heater, t, k] * self.heater_tempe_return_min[heater])
-                    objs_revenue.append(-1 * self.dual_heater_return_max[heater, t, k] * self.heater_tempe_return_max[heater])
+                    objs_revenue.append(-1 * self.dual_heater_supply_min[heater, t, k] * self.heater_tempe_supply_min[heater])
+                    objs_revenue.append(1 * self.dual_heater_supply_max[heater, t, k] * self.heater_tempe_supply_max[heater])
+                    objs_revenue.append(-1 * self.dual_heater_return_min[heater, t, k] * self.heater_tempe_return_min[heater])
+                    objs_revenue.append(1 * self.dual_heater_return_max[heater, t, k] * self.heater_tempe_return_max[heater])
 
             for exchanger in range(self.heat_exchanger_num):
                 for t in range(T):
-                    objs_revenue.append(1 * self.dual_exchanger_supply_min[exchanger, t, k] * self.exchanger_tempe_supply_min[exchanger])
-                    objs_revenue.append(-1 * self.dual_exchanger_supply_max[exchanger, t, k] * self.exchanger_tempe_supply_max[exchanger])
-                    objs_revenue.append(1 * self.dual_exchanger_return_min[exchanger, t, k] * self.exchanger_tempe_return_min[exchanger])
-                    objs_revenue.append(-1 * self.dual_exchanger_return_max[exchanger, t, k] * self.exchanger_tempe_return_max[exchanger])
+                    objs_revenue.append(-1 * self.dual_exchanger_supply_min[exchanger, t, k] * self.exchanger_tempe_supply_min[exchanger])
+                    objs_revenue.append(1 * self.dual_exchanger_supply_max[exchanger, t, k] * self.exchanger_tempe_supply_max[exchanger])
+                    objs_revenue.append(-1 * self.dual_exchanger_return_min[exchanger, t, k] * self.exchanger_tempe_return_min[exchanger])
+                    objs_revenue.append(1 * self.dual_exchanger_return_max[exchanger, t, k] * self.exchanger_tempe_return_max[exchanger])
 
             for well in range(self.well_lower_num):
                 for t in range(T):
                     objs_revenue.append(-1 * self.dual_lower_well_output_min[well, t, k] * self.well_lower_output_min[well])
                     objs_revenue.append(1 * self.dual_lower_well_output_max[well, t, k] * self.well_lower_output_max[well])
 
+            # TODO: change to minus - plus
             for node in range(self.gas_node_num):
                 for t in range(T):
-                    objs_revenue.append(self.dual_gas_node_pressure_min[node, t, k] * self.gas_node_pressure_min[node])
-                    objs_revenue.append(-1 * self.dual_gas_node_pressure_max[node, t, k] * self.gas_node_pressure_max[node])
+                    objs_revenue.append(-1 * self.dual_gas_node_pressure_min[node, t, k] * self.gas_node_pressure_min[node])
+                    objs_revenue.append(1 * self.dual_gas_node_pressure_max[node, t, k] * self.gas_node_pressure_max[node])
+
+            for line in range(self.gas_line_num):
+                for t in range(T):
+                    objs_revenue.append(-1 * self.dual_gas_flow_in_min[line, t, k] * self.gas_flow_in_min[line])
+                    objs_revenue.append(1 * self.dual_gas_flow_in_max[line, t, k] * self.gas_flow_in_max[line])
+                    objs_revenue.append(-1 * self.dual_gas_flow_out_min[line, t, k] * self.gas_flow_out_min[line])
+                    objs_revenue.append(1 * self.dual_gas_flow_out_max[line, t, k] * self.gas_flow_out_max[line])
             # end
 
             obj_k.append(sum(objs_cost) + sum(objs_revenue))
