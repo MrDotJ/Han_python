@@ -315,6 +315,9 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.gas_flow_out.flatten().tolist())
         self.all_lower_level_vars.extend(self.gas_linepack.flatten().tolist())
         self.all_lower_level_vars.extend(self.aux_weymouth_left.flatten().tolist())
+        self.all_lower_level_vars.extend(self.aux_weymouth_right_1.flatten().tolist())
+        self.all_lower_level_vars.extend(self.aux_weymouth_right_2.flatten().tolist())
+        self.all_lower_level_vars.extend(self.pccp_relax          .flatten().tolist())
         self.do_nothing = 1
 
     def build_heat_system(self):
@@ -755,7 +758,6 @@ class OneLayer:
 
     # noinspection PyArgumentList
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
-        # return
         self.objection_aux_update = []
         self.model.remove(self.old_vars_constraints)
         self.old_vars_constraints = []
@@ -1012,13 +1014,14 @@ class OneLayer:
         self.equivalent_cost = obj_k_p
         self.equivalent_revenue = obj_k_h
 
-
     def optimize(self, distribution):
         self.model.setParam("IntegralityFocus", 1)
         self.model.setParam("NonConvex", 2)
-        #self.model.setParam("OutputFlag", 0)
+        self.model.setParam("OutputFlag", 0)
+        self.model.setParam("LogToConsole", 0)
 
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
+        self.model.setObjective((np.array(self.obj_k) + np.array(self.objection_aux_update)).dot(np.array(distribution)))
         self.model.optimize()
 
         expected_cost = []
@@ -1033,11 +1036,20 @@ class OneLayer:
                     expected_cost.append(self.upper_generator_power_output[gen, t, k] * self.dual_node_power_balance[self.generator_upper_connection_index[gen], t, k])
 
         self.expected_revenue = sum(expected_cost)
+
         value_generator_quoted_price = to_value(self.upper_generator_quoted_price_tuple_dict)
         value_chp_power_quoted_price = to_value(self.upper_chp_power_quoted_price_tuple_dict)
         value_chp_heat_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
+
         obj_k = np.array([obj.getValue() * -1 for obj in self.obj_k])              # change to profile
-        return value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k
+
+        linearization_point = [
+            to_value_np(self.gas_node_pressure[self.gas_pipe_end_node]),
+            to_value_np(self.gas_flow_in),
+            to_value_np(self.gas_flow_out)]
+        return [value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price], \
+               obj_k, \
+               linearization_point
 
 
     def sss(self):

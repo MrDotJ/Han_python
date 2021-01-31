@@ -220,3 +220,39 @@ def to_value(vars_gur):
                         for n in range(shape[4]):
                             re[i, j, k, m, n] = vars_gur[i, j, k, m, n].getAttr('X')
         return re
+
+
+def to_value_np(vars_np):
+    re = np.ones(vars_np.shape)
+    shape = vars_np.shape
+    dim = vars_np.ndim
+    if dim == 1:
+        for i in range(shape[0]):
+            re[i] = vars_np[i].getAttr('X')
+        return re
+    if dim == 2:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                re[i, j] = vars_np[i, j].getAttr('X')
+        return re
+    if dim == 3:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                for k in range(shape[2]):
+                    re[i, j, k] = vars_np[i, j, k].getAttr('X')
+        return re
+    if dim == 4:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                for k in range(shape[2]):
+                    for m in range(shape[3]):
+                        re[i, j, k, m] = vars_np[i, j, k, m].getAttr('X')
+        return re
+    if dim == 5:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                for k in range(shape[2]):
+                    for m in range(shape[3]):
+                        for n in range(shape[4]):
+                            re[i, j, k, m, n] = vars_np[i, j, k, m, n].getAttr('X')
+        return re
