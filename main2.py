@@ -31,28 +31,35 @@ def do_main():
     distribution = empirical_distribution
     alpha = 0.6
 
-    linearization_point: List[ndarray] = [np.ones((3, 1, 1)), np.ones((3, 1, 1)), np.ones((3, 1, 1))]
+    linearization_point: List[ndarray] = [np.zeros((3, 1, 1)), np.zeros((3, 1, 1)), np.zeros((3, 1, 1))]
     obj_k = 'suppress a warning'
+    PUNISH = 2
 
     for _ in range(3): # CCG layer
         print('===>first stage')
-        for _ in range(3):   # PCCP layer
+        penalty = 1
+        for index in range(3):   # PCCP layer
             # 2. update pccp-related objective and constraints
             first_layer.update_gas_system_pccp_original_and_dual_constraints(*linearization_point)
             # 3. establish kkt derivation constraints
-            first_layer.build_kkt_derivative_constraints()
-            # 4. save old information
+            first_layer.build_kkt_derivative_constraints(penalty)
+            # 4. save old information and update penalty
             linearization_point_old = deepcopy(linearization_point)
+            penalty = penalty * PUNISH if index > 0 else 1
             # 5. optimize the model
             # [generator, chp_power, chp_heat], [revenue_1, ..., revenue_k], [pressure_end, flow_in, flow_out]
             quoted_price, obj_k, linearization_point = first_layer.optimize(distribution)
 
-            print('         ===>norm linearization point: ' + str(np.linalg.norm([np.vstack(linearization_point_old), np.vstack(linearization_point)])))
-            print('         ===>revenue: ' + str(obj_k))
+            print('         ===>PCCP: norm linearization point : ' + str(np.linalg.norm(np.vstack(linearization_point_old) - np.vstack(linearization_point))))
+            print('         ===>1. linearization point pressure: ' + str(linearization_point[0].flatten()))
+            print('         ===>2. linearization point flow in : ' + str(linearization_point[1].flatten()))
+            print('         ===>3. linearization point flow out: ' + str(linearization_point[2].flatten()))
+            print('         ===>4. revenue                     : ' + str(obj_k))
         worst_distribution = second_layer.optimize(obj_k)
         distribution = alpha * np.array(distribution) + (1 - alpha) * np.array(worst_distribution)
         print('===>second stage')
-        print('         ===>norm distribution: ' + str(np.linalg.norm([worst_distribution, distribution])))
+        print('         ===>CCG: norm distribution : ' + str(np.linalg.norm(worst_distribution - distribution)))
+        print('         ===>1. worst distribution  : ' + str(distribution))
 
 
 if __name__ == '__main__':

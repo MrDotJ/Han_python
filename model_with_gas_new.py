@@ -769,11 +769,11 @@ class OneLayer:
                     k1 = self.gas_weymouth[line]
                     k2 = flow_in_old[line, t, k] + flow_out_old[line, t, k]
                     k3 = (flow_in_old[line, t, k] + flow_out_old[line, t, k])**2 / 4
-                    k4 = self.gas_weymouth[line] * pressure_end_old[self.gas_pipe_end_node[line], t, k] * pressure_end_old[self.gas_pipe_end_node[line], t, k]
+                    k4 = self.gas_weymouth[line] * ((pressure_end_old[self.gas_pipe_end_node[line], t, k])**2)
                     k5 = 2 * self.gas_weymouth[line] * pressure_end_old[self.gas_pipe_end_node[line], t, k]
                     q = np.array([0, -1 * k2 / 2, -1 * k2 / 2, k5, -1])
                     r = np.array([-1 * k3 - k4])
-                    d = sqrt(k1) / 2
+                    d = sqrt(k1)
                     x = np.array([self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
                                   self.gas_flow_in[line, t, k],
                                   self.gas_flow_out[line, t, k],
@@ -785,7 +785,7 @@ class OneLayer:
                     dual_vars1, constr1, expr1 = Complementary_equal_plus(cons_expr1, self.model, 'weymouth_relax_right_auxiliary1_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_vars2, constr2, expr2 = Complementary_equal_plus(cons_expr2, self.model, 'weymouth_relax_right_auxiliary2_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_left, dual_right, constr_original, constr_dual, expr3 = Complementary_soc_plus(
-                        [2 * d, 1],
+                        [d, 1],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k], self.aux_weymouth_right_1[line, t, k]],
                         [1],
                         [self.aux_weymouth_right_2[line, t, k]],
@@ -837,8 +837,11 @@ class OneLayer:
 
         self.lower_objective = sum(lower_objs)
 
-    def build_kkt_derivative_constraints(self):
-        my_expr = MyExpr(self.dual_expression_basic + self.dual_expression_additional + self.lower_objective)
+    def build_kkt_derivative_constraints(self, penalty):
+        my_expr = MyExpr(self.lower_objective +
+                         self.dual_expression_basic +
+                         self.dual_expression_additional +
+                         penalty * sum(self.pccp_relax.flatten()))
         for var in self.all_lower_level_vars:
             expr = my_expr.getCoeff(var)
             my_expr.addConstr(expr, self.model, var.VarName)
@@ -1018,7 +1021,6 @@ class OneLayer:
         self.model.setParam("IntegralityFocus", 1)
         self.model.setParam("NonConvex", 2)
         self.model.setParam("OutputFlag", 0)
-        self.model.setParam("LogToConsole", 0)
 
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         self.model.setObjective((np.array(self.obj_k) + np.array(self.objection_aux_update)).dot(np.array(distribution)))
