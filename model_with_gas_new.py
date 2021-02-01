@@ -232,10 +232,11 @@ class OneLayer:
         self.dual_weymouth_aux_left                         = None
         self.dual_weymouth_relax_left_left                  = None
         self.dual_weymouth_relax_left_right                 = None
-        self.dual_gas_flow_in_min                          = None
-        self.dual_gas_flow_in_max                          = None
+        self.dual_gas_flow_in_min                           = None
+        self.dual_gas_flow_in_max                           = None
         self.dual_gas_flow_out_min                          = None
         self.dual_gas_flow_out_max                          = None
+        self.dual_pccp_relax_great_zero                     = None
 
         self.all_lower_level_vars                           = []
         self.obj_k                                          = []
@@ -251,10 +252,10 @@ class OneLayer:
         self.upper_generator_quoted_price                 = tonp( self.upper_generator_quoted_price_tuple_dict                                                             )
         self.upper_chp_power_quoted_price                 = tonp( self.upper_chp_power_quoted_price_tuple_dict                                                             )
 
-        self.upper_generator_power_output                 = tonp( self.model.addVars(self.generator_upper_num, T, K,                    name='upper_generator_power'       )                                                 )
-        self.lower_generator_power_output                 = tonp( self.model.addVars(self.generator_lower_num, T, K,                    name='lower_generator_power'       )                                                 )
-        self.line_power_flow                              = tonp( self.model.addVars(self.ele_line_num,        T, K, lb=-1 * INFINITY, ub=INFINITY, name='line_power_flow'             )                                                       )
-        self.bus_angle                                    = tonp( self.model.addVars(self.ele_node_num,        T, K, lb=-1 * INFINITY, ub=INFINITY, name='bus_angle'                   )                                                             )
+        self.upper_generator_power_output                 = tonp( self.model.addVars(self.generator_upper_num, T, K,  name='upper_generator_power',  lb=-1 * INFINITY, ub=INFINITY ) )
+        self.lower_generator_power_output                 = tonp( self.model.addVars(self.generator_lower_num, T, K,  name='lower_generator_power',  lb=-1 * INFINITY, ub=INFINITY ) )
+        self.line_power_flow                              = tonp( self.model.addVars(self.ele_line_num,        T, K,  name='line_power_flow',        lb=-1 * INFINITY, ub=INFINITY ) )
+        self.bus_angle                                    = tonp( self.model.addVars(self.ele_node_num,        T, K,  name='bus_angle',              lb=-1 * INFINITY, ub=INFINITY ) )
 
         self.dual_node_power_balance                      = np.empty((self.ele_node_num,        T,   K, ), dtype=object)
         self.dual_line_power_flow_great                   = np.empty((self.ele_line_num,        T,   K, ), dtype=object)
@@ -277,16 +278,16 @@ class OneLayer:
         self.upper_well_quoted_price_tuple_dict   = self.model.addVars(self.well_upper_num, T, name='upper_gas_quoted_price')
         self.upper_well_quoted_price              = tonp( self.upper_well_quoted_price_tuple_dict)
 
-        self.upper_gas_well_output                = tonp( self.model.addVars(self.well_upper_num,        T, K, name='upper_well_output'                                                               ) )
-        self.lower_gas_well_output                = tonp( self.model.addVars(self.well_lower_num,        T, K, name='lower_well_output'                                                               ) )
-        self.gas_node_pressure                    = tonp( self.model.addVars(self.gas_node_num,          T, K, name='gas_node_pressure'                                                               ) )
-        self.gas_flow_in                          = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_flow_in'                                                                     ) )
-        self.gas_flow_out                         = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_flow_out'                                                                    ) )
-        self.aux_weymouth_left                    = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_left_auxiliary', lb=-1 * INFINITY, ub=INFINITY    ) )
-        self.aux_weymouth_right_1                 = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_right_auxiliary1', lb=-1 * INFINITY, ub=INFINITY  ) )
-        self.aux_weymouth_right_2                 = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_right_auxiliary2', lb=-1 * INFINITY, ub=INFINITY  ) )
-        self.pccp_relax                           = tonp( self.model.addVars(self.gas_line_num,          T, K, name='pccp_relax'))
-        self.gas_linepack                         = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_linepack'                                                                    ) )
+        self.upper_gas_well_output                = tonp( self.model.addVars(self.well_upper_num,        T, K, name='upper_well_output',                lb=-1 * INFINITY, ub=INFINITY ) )
+        self.lower_gas_well_output                = tonp( self.model.addVars(self.well_lower_num,        T, K, name='lower_well_output',                lb=-1 * INFINITY, ub=INFINITY ) )
+        self.gas_node_pressure                    = tonp( self.model.addVars(self.gas_node_num,          T, K, name='gas_node_pressure',                lb=-1 * INFINITY, ub=INFINITY ) )
+        self.gas_flow_in                          = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_flow_in',                      lb=-1 * INFINITY, ub=INFINITY ) )
+        self.gas_flow_out                         = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_flow_out',                     lb=-1 * INFINITY, ub=INFINITY ) )
+        self.aux_weymouth_left                    = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_left_auxiliary',          lb=-1 * INFINITY, ub=INFINITY ) )
+        self.aux_weymouth_right_1                 = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_right_auxiliary1',        lb=-1 * INFINITY, ub=INFINITY ) )
+        self.aux_weymouth_right_2                 = tonp( self.model.addVars(self.gas_line_num,          T, K, name='weymouth_right_auxiliary2',        lb=-1 * INFINITY, ub=INFINITY ) )
+        self.pccp_relax                           = tonp( self.model.addVars(self.gas_line_num,          T, K, name='pccp_relax',                       lb=-1 * INFINITY, ub=INFINITY ) )
+        self.gas_linepack                         = tonp( self.model.addVars(self.gas_line_num,          T, K, name='gas_linepack',                     lb=-1 * INFINITY, ub=INFINITY ) )
 
         self.dual_node_gas_balance                = np.empty((self.gas_node_num,           T, K, ), dtype=object) 
         self.dual_linepack_with_pressure          = np.empty((self.gas_line_num,           T, K, ), dtype=object) 
@@ -307,6 +308,8 @@ class OneLayer:
         self.dual_gas_flow_in_max                 = np.empty((self.gas_line_num,           T, K, ), dtype=object)
         self.dual_gas_flow_out_min                = np.empty((self.gas_line_num,           T, K, ), dtype=object)
         self.dual_gas_flow_out_max                = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+        self.dual_pccp_relax_great_zero           = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+
 
         self.all_lower_level_vars.extend(self.upper_gas_well_output.flatten().tolist())
         self.all_lower_level_vars.extend(self.lower_gas_well_output.flatten().tolist())
@@ -324,18 +327,18 @@ class OneLayer:
         self.upper_chp_heat_quoted_price_tuple_dict = self.model.addVars(self.chp_upper_num, T, lb=0, name='upper_chp_heat_quoted_price')
         self.upper_chp_heat_quoted_price            = tonp( self.upper_chp_heat_quoted_price_tuple_dict )
 
-        self.upper_chp_point                    = tonp( self.model.addVars(self.chp_upper_num, self.chp_point_num, T, K, name= 'upper_chp_point')        )
-        self.lower_chp_point                    = tonp( self.model.addVars(self.chp_lower_num, self.chp_point_num, T, K, name= 'lower_chp_point')        )
-        self.upper_chp_heat_output              = tonp( self.model.addVars(self.chp_upper_num, T, K, name='upper_chp_heat_output')                       )
-        self.upper_chp_power_output             = tonp( self.model.addVars(self.chp_upper_num, T, K, name='upper_chp_power')                             )
-        self.lower_chp_heat_output              = tonp( self.model.addVars(self.chp_lower_num, T, K, name='lower_chp_heat_output')                       )
-        self.lower_chp_power_output             = tonp( self.model.addVars(self.chp_lower_num, T, K, name='lower_chp_power')                             )
-        self.heat_node_tempe_supply             = tonp( self.model.addVars(self.heat_node_num, T, K, name='heat_node_temperature_supply')                )
-        self.heat_node_tempe_return             = tonp( self.model.addVars(self.heat_node_num, T, K, name='heat_node_temperature_return')                )
-        self.heat_pipe_start_tempe_supply       = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_start_temperature_supply_network')  )
-        self.heat_pipe_end_tempe_supply         = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_end_temperature_supply_network')    )
-        self.heat_pipe_start_tempe_return       = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_start_temperature_return_network')  )
-        self.heat_pipe_end_tempe_return         = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_end_temperature_return_network')    )
+        self.upper_chp_point                    = tonp( self.model.addVars(self.chp_upper_num, self.chp_point_num, T, K, name='upper_chp_point',          lb=-1 * INFINITY, ub=INFINITY ) )
+        self.lower_chp_point                    = tonp( self.model.addVars(self.chp_lower_num, self.chp_point_num, T, K, name='lower_chp_point',          lb=-1 * INFINITY, ub=INFINITY ) )
+        self.upper_chp_heat_output              = tonp( self.model.addVars(self.chp_upper_num, T, K, name='upper_chp_heat_output',                        lb=-1 * INFINITY, ub=INFINITY ) )
+        self.upper_chp_power_output             = tonp( self.model.addVars(self.chp_upper_num, T, K, name='upper_chp_power',                              lb=-1 * INFINITY, ub=INFINITY ) )
+        self.lower_chp_heat_output              = tonp( self.model.addVars(self.chp_lower_num, T, K, name='lower_chp_heat_output',                        lb=-1 * INFINITY, ub=INFINITY ) )
+        self.lower_chp_power_output             = tonp( self.model.addVars(self.chp_lower_num, T, K, name='lower_chp_power',                              lb=-1 * INFINITY, ub=INFINITY ) )
+        self.heat_node_tempe_supply             = tonp( self.model.addVars(self.heat_node_num, T, K, name='heat_node_temperature_supply',                 lb=-1 * INFINITY, ub=INFINITY ) )
+        self.heat_node_tempe_return             = tonp( self.model.addVars(self.heat_node_num, T, K, name='heat_node_temperature_return',                 lb=-1 * INFINITY, ub=INFINITY ) )
+        self.heat_pipe_start_tempe_supply       = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_start_temperature_supply_network',   lb=-1 * INFINITY, ub=INFINITY ) )
+        self.heat_pipe_end_tempe_supply         = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_end_temperature_supply_network',     lb=-1 * INFINITY, ub=INFINITY ) )
+        self.heat_pipe_start_tempe_return       = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_start_temperature_return_network',   lb=-1 * INFINITY, ub=INFINITY ) )
+        self.heat_pipe_end_tempe_return         = tonp( self.model.addVars(self.heat_pipe_num, T, K, name='heat_pipe_end_temperature_return_network',     lb=-1 * INFINITY, ub=INFINITY ) )
 
         self.dual_lower_chp_point_sum_one       = np.empty((self.chp_lower_num,                     T, K, ), dtype=object)
         self.dual_lower_chp_power_output        = np.empty((self.chp_lower_num,                     T, K, ), dtype=object)
@@ -740,6 +743,14 @@ class OneLayer:
                     dual_expr.append(expr3)
                     dual_expr.append(expr4)
 
+        for line in range(self.gas_line_num):
+            for t in range(T):
+                for k in range(K):
+                    cons_expr1 = self.pccp_relax[line, t, k]
+                    self.dual_pccp_relax_great_zero[line, t, k], expr1 = \
+                        Complementary_great(cons_expr1, self.model, 'dual_pccp_relax_great_zero' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    dual_expr.append(expr1)
+
         for line in self.gas_inactive_line:
             for t in range(T):
                 for k in range(K):
@@ -1039,6 +1050,18 @@ class OneLayer:
 
         self.expected_revenue = sum(expected_cost)
 
+        weymouth_left = []
+        weymouth_right = []
+        for line in range(self.gas_line_num):
+            for t in range(T):
+                for k in range(K):
+                    weymouth_left.append(self.gas_weymouth[line] *
+                                         ((self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] * self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] -
+                                           self.gas_node_pressure[self.gas_pipe_end_node[line], t, k] * self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]).getValue()))
+                    weymouth_right.append(((self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) *
+                                           (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k])).getValue() / 4)
+
+
         value_generator_quoted_price = to_value(self.upper_generator_quoted_price_tuple_dict)
         value_chp_power_quoted_price = to_value(self.upper_chp_power_quoted_price_tuple_dict)
         value_chp_heat_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
@@ -1046,12 +1069,19 @@ class OneLayer:
         obj_k = np.array([obj.getValue() * -1 for obj in self.obj_k])              # change to profile
 
         linearization_point = [
+            to_value_np(self.gas_node_pressure[self.gas_pipe_start_node]),
             to_value_np(self.gas_node_pressure[self.gas_pipe_end_node]),
             to_value_np(self.gas_flow_in),
             to_value_np(self.gas_flow_out)]
+
+        pccp = to_value_np(self.pccp_relax)
+
         return [value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price], \
                obj_k, \
-               linearization_point
+               linearization_point, \
+               pccp, \
+               np.array(weymouth_left), \
+               np.array(weymouth_right)
 
 
     def sss(self):

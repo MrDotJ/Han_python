@@ -13,7 +13,7 @@ def do_main():
     first_layer.build_gas_system_original_and_dual_constrains()
     first_layer.build_heat_system_original_and_dual_constraints()
 
-    first_layer.update_gas_system_pccp_original_and_dual_constraints(np.ones((10,10,10)),np.ones((10,10,10)),np.ones((10,10,10)))
+    first_layer.update_gas_system_pccp_original_and_dual_constraints(np.zeros((10,10,10)),np.zeros((10,10,10)),np.zeros((10,10,10)))
 
     first_layer.build_lower_objective()
     first_layer.build_kkt_derivative_constraints(1)
