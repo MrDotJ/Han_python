@@ -266,7 +266,6 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.lower_generator_power_output.flatten().tolist())
         self.all_lower_level_vars.extend(self.line_power_flow.flatten().tolist())
         self.all_lower_level_vars.extend(self.bus_angle.flatten().tolist())
-
     def build_gas_system(self):
         self.upper_well_quoted_price_tuple_dict = self.model.addVars(self.well_upper_num, T,
                                                                      name='upper_gas_quoted_price')
@@ -311,8 +310,10 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.gas_flow_out.flatten().tolist())
         self.all_lower_level_vars.extend(self.gas_linepack.flatten().tolist())
         self.all_lower_level_vars.extend(self.aux_weymouth_left.flatten().tolist())
+        self.all_lower_level_vars.extend(self.aux_weymouth_right_1.flatten().tolist())
+        self.all_lower_level_vars.extend(self.aux_weymouth_right_2.flatten().tolist())
+        self.all_lower_level_vars.extend(self.pccp_relax          .flatten().tolist())
         self.do_nothing = 1
-
     def build_heat_system(self):
         self.upper_chp_heat_quoted_price_tuple_dict = self.model.addVars(self.chp_upper_num, T, lb=0,
                                                                          name='upper_chp_heat_quoted_price')
@@ -372,7 +373,6 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.heat_pipe_end_tempe_supply.flatten().tolist())
         self.all_lower_level_vars.extend(self.heat_pipe_start_tempe_return.flatten().tolist())
         self.all_lower_level_vars.extend(self.heat_pipe_end_tempe_return.flatten().tolist())
-
     def build_power_system_original_and_dual_constraints(self):
         return
         self.model.update()
@@ -566,7 +566,6 @@ class OneLayer:
                     dual_expr.append(expr2)
 
         self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
-
     def build_heat_system_original_and_dual_constraints(self):
         return
         dual_expr = []
@@ -832,7 +831,6 @@ class OneLayer:
                     dual_expr.append(expr3)
                     dual_expr.append(expr4)
         self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
-
     def build_gas_system_original_and_dual_constrains(self):
         dual_expr = []
 
@@ -992,7 +990,6 @@ class OneLayer:
 
     # noinspection PyArgumentList
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
-        return
         self.model.remove(self.old_vars_constraints)
         self.old_vars_constraints = []
         dual_expr = []
@@ -1005,7 +1002,7 @@ class OneLayer:
                     k4 = self.gas_weymouth[line] * pressure_end_old[self.gas_pipe_end_node[line], t, k] * \
                          pressure_end_old[self.gas_pipe_end_node[line], t, k]
                     k5 = 2 * self.gas_weymouth[line] * pressure_end_old[self.gas_pipe_end_node[line], t, k]
-                    q = np.array([0, -1 * k2 / 2, -1 * k2 / 2, k5, -1])
+                    q = np.array([0, -1 * k2 / 2, -1 * k2 / 2, -k5, -1])
                     r = np.array([-1 * k3 - k4])
                     d = sqrt(k1) / 2
                     x = np.array([self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
@@ -1081,9 +1078,11 @@ class OneLayer:
                         self.well_lower_output_price[well] * self.lower_gas_well_output[well, time, k])
 
         self.lower_objective = sum(lower_objs)
-
-    def build_kkt_derivative_constraints(self):
-        my_expr = MyExpr(self.dual_expression_basic + self.dual_expression_additional + self.lower_objective)
+    def build_kkt_derivative_constraints(self, penalty):
+        my_expr = MyExpr(self.dual_expression_basic +
+                         self.dual_expression_additional +
+                         self.lower_objective +
+                         penalty * sum(self.pccp_relax.flatten()))
         self.model.update()
         for var in self.all_lower_level_vars:
             expr = my_expr.getCoeff(var)
@@ -1124,24 +1123,6 @@ class OneLayer:
                     sense=gurobi.GRB.LESS_EQUAL,
                     name='upper_gas_well_quoted_price_max' + str(t) + '_well_' + str(well)
                 )
-
-    def xxxxxxxbuild_upper_objectivexxx(self):
-        obj_k = []
-        for k in range(K):
-            expected_cost = []
-            for chp in range(self.chp_upper_num):
-                for t in range(T):
-                    expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[
-                        self.chp_upper_connection_heater_index[chp], t, k])
-                    expected_cost.append(self.upper_chp_power_output[chp, t, k] * self.dual_node_power_balance[
-                        self.chp_upper_connection_power_index[chp], t, k])
-            for gen in range(self.generator_upper_num):
-                for t in range(T):
-                    expected_cost.append(self.upper_generator_power_output[gen, t, k] * self.dual_node_power_balance[
-                        self.generator_upper_connection_index[gen], t, k])
-            obj_k.append(sum(expected_cost))
-        self.obj_k = obj_k
-
     def build_upper_objective(self):
         obj_k = []
         obj_k_p = []
@@ -1282,6 +1263,7 @@ class OneLayer:
         # self.model.setParam("OutputFlag", 0)
 
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
+        self.model.setObjective(0)
         self.model.optimize()
         '''
         expected_cost = []

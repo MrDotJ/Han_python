@@ -771,7 +771,7 @@ class OneLayer:
                     k3 = (flow_in_old[line, t, k] + flow_out_old[line, t, k])**2 / 4
                     k4 = self.gas_weymouth[line] * ((pressure_end_old[self.gas_pipe_end_node[line], t, k])**2)
                     k5 = 2 * self.gas_weymouth[line] * pressure_end_old[self.gas_pipe_end_node[line], t, k]
-                    q = np.array([0, -1 * k2 / 2, -1 * k2 / 2, k5, -1])
+                    q = np.array([0, -1 * k2 / 2, -1 * k2 / 2, -1 * k5, -1])
                     r = np.array([-1 * k3 - k4])
                     d = sqrt(k1)
                     x = np.array([self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
@@ -785,7 +785,7 @@ class OneLayer:
                     dual_vars1, constr1, expr1 = Complementary_equal_plus(cons_expr1, self.model, 'weymouth_relax_right_auxiliary1_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_vars2, constr2, expr2 = Complementary_equal_plus(cons_expr2, self.model, 'weymouth_relax_right_auxiliary2_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_left, dual_right, constr_original, constr_dual, expr3 = Complementary_soc_plus(
-                        [d, 1],
+                        [2 * d, 1],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k], self.aux_weymouth_right_1[line, t, k]],
                         [1],
                         [self.aux_weymouth_right_2[line, t, k]],

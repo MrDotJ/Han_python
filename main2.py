@@ -31,13 +31,13 @@ def do_main():
     distribution = empirical_distribution
     alpha = 0.6
 
-    linearization_point: List[ndarray] = [np.zeros((3, 1, 1)), np.zeros((3, 1, 1)), np.zeros((3, 1, 1))]
+    linearization_point: List[ndarray] = [np.ones((3, 1, 1)), np.ones((3, 1, 1)), np.ones((3, 1, 1))]
     obj_k = 'suppress a warning'
     PUNISH = 2
 
     for _ in range(3): # CCG layer
         print('===>first stage')
-        penalty = 1
+        penalty = 0
         for index in range(3):   # PCCP layer
             # 2. update pccp-related objective and constraints
             first_layer.update_gas_system_pccp_original_and_dual_constraints(*linearization_point)
