@@ -44,23 +44,9 @@ class OneLayer:
         # model
         self.model = gurobi.Model()
 
-        self.upper_generator_quoted_price = None
-        self.upper_chp_power_quoted_price = None
-        self.upper_chp_heat_quoted_price = None
         self.upper_well_quoted_price = None
 
-        self.upper_generator_quoted_price_tuple_dict = None
-        self.upper_chp_power_quoted_price_tuple_dict = None
-        self.upper_chp_heat_quoted_price_tuple_dict = None
         self.upper_well_quoted_price_tuple_dict = None
-
-        self.upper_generator_power_output = None
-        self.lower_generator_power_output = None
-
-        self.upper_chp_power_output = None
-        self.lower_chp_power_output = None
-        self.upper_chp_heat_output = None
-        self.lower_chp_heat_output = None
 
         self.upper_gas_well_output = None
         self.lower_gas_well_output = None
@@ -421,10 +407,8 @@ class OneLayer:
         self.model.setObjective(0)
         self.model.optimize()
 
-
         value_generator_quoted_price = to_value(self.upper_well_quoted_price_tuple_dict)
         value_chp_power_quoted_price = to_value(self.upper_well_quoted_price_tuple_dict)
         value_chp_heat_quoted_price = to_value(self.upper_well_quoted_price_tuple_dict)
         obj_k = np.array([obj.getValue() * -1 for obj in self.obj_k])  # change to profile
         return value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, obj_k
-
