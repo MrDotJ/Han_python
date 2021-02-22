@@ -35,10 +35,10 @@ def do_main():
     obj_k = 'suppress a warning'
     PUNISH = 2
 
-    for _ in range(3): # CCG layer
+    for _ in range(1): # CCG layer
         print('===>first stage')
         penalty = 1
-        for index in range(3):   # PCCP layer
+        for index in range(1):   # PCCP layer
             # 2. update pccp-related objective and constraints
             first_layer.update_gas_system_pccp_original_and_dual_constraints(linearization_point[1], linearization_point[2], linearization_point[3])
             # 3. establish kkt derivation constraints

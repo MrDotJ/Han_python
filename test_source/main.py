@@ -1,4 +1,4 @@
-from model_single_gas_test_pccp import OneLayer
+from model_with_gas_new import OneLayer
 from second_stage import SecondLayer
 from config3_with_gas import get_config, empirical_distribution, confidence_level
 import numpy as np
@@ -13,7 +13,7 @@ def do_main():
     first_layer.build_gas_system_original_and_dual_constrains()
     first_layer.build_heat_system_original_and_dual_constraints()
 
-    first_layer.update_gas_system_pccp_original_and_dual_constraints(np.zeros((10,10,10)),np.zeros((10,10,10)),np.zeros((10,10,10)))
+    first_layer.update_gas_system_pccp_original_and_dual_constraints(np.ones((10, 10, 10)), np.ones((10, 10, 10)), np.ones((10, 10, 10)))
 
     first_layer.build_lower_objective()
     first_layer.build_kkt_derivative_constraints(1)

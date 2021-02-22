@@ -48,3 +48,57 @@ model.addConstr(x*x + y*y - z*z <= 0)
 model.addConstr(x1*x1 + y1*y1 - z1*z1 <= 0)
 model.addConstr(x == x1)
 model.optimize()
+
+
+
+
+   weymouth_right_auxiliary1[0,0,0] : <gurobi.LinExpr: -1.0 weymouth_relax_right_auxiliary1_0_t_0_scenario_0 + -1.0 weymouth_relax_right_soc0_t_0_scenario_0left[1]> = 0.0
+   weymouth_right_auxiliary2[0,0,0] : <gurobi.LinExpr: -1.0 weymouth_relax_right_auxiliary2_0_t_0_scenario_0 + -1.0 weymouth_relax_right_soc0_t_0_scenario_0right[0]> = 0.0
+   pccp_relax[0,0,0] : <gurobi.LinExpr: -1.0 weymouth_relax_right_auxiliary1_0_t_0_scenario_0 + -1.0 weymouth_relax_right_auxiliary2_0_t_0_scenario_0> = -1.0
+   SOC_dualweymouth_relax_right_soc0_t_0_scenario_0 : <gurobi.QuadExpr: 0.0 + [ 0.7719999999999999 weymouth_relax_right_soc0_t_0_scenario_0left[0] ^ 2 + weymouth_relax_right_soc0_t_0_scenario_0left[1] ^ 2 + -1.0 weymouth_relax_right_soc0_t_0_scenario_0right[0] ^ 2 ]> <= 0.0
+
+
+
+
+relax_2.display()
+Minimize
+   <gurobi.LinExpr: 0.0>
+Subject To
+   weymouth_right_auxiliary1[0,0,0] : <gurobi.LinExpr: -1.0 weymouth_relax_right_auxiliary1_0_t_0_scenario_0 + -1.0 weymouth_relax_right_soc0_t_0_scenario_0left[1]> = 0.0
+   weymouth_right_auxiliary2[0,0,0] : <gurobi.LinExpr: -1.0 weymouth_relax_right_auxiliary2_0_t_0_scenario_0 + -1.0 weymouth_relax_right_soc0_t_0_scenario_0right[0]> = 0.0
+   pccp_relax[0,0,0] : <gurobi.LinExpr: -1.0 weymouth_relax_right_auxiliary1_0_t_0_scenario_0 + -1.0 weymouth_relax_right_auxiliary2_0_t_0_scenario_0> = -1.0
+   SOC_dualweymouth_relax_right_soc0_t_0_scenario_0 : <gurobi.QuadExpr: 0.0 + [ 0.7719999999999999 weymouth_relax_right_soc0_t_0_scenario_0left[0] ^ 2 + weymouth_relax_right_soc0_t_0_scenario_0left[1] ^ 2 + -1.0 weymouth_relax_right_soc0_t_0_scenario_0right[0] ^ 2 ]> <= 0.0
+Bounds
+   weymouth_left_auxiliary[0,0,0]  free
+   weymouth_left_auxiliary[1,0,0]  free
+   weymouth_left_auxiliary[2,0,0]  free
+   weymouth_right_auxiliary1[0,0,0]  free
+   weymouth_right_auxiliary1[1,0,0]  free
+   weymouth_right_auxiliary1[2,0,0]  free
+   weymouth_right_auxiliary2[0,0,0]  free
+   weymouth_right_auxiliary2[1,0,0]  free
+   weymouth_right_auxiliary2[2,0,0]  free
+   pccp_relax[0,0,0]  free
+   pccp_relax[1,0,0]  free
+   pccp_relax[2,0,0]  free
+   weymouth_relax_left_auxiliary_0_t_0_scenario_0  free
+   weymouth_relax_left_soc_0_t_0_scenario_0dual-left[0]  free
+   weymouth_relax_left_soc_0_t_0_scenario_0dual-left[1]  free
+   weymouth_relax_left_auxiliary_1_t_0_scenario_0  free
+   weymouth_relax_left_soc_1_t_0_scenario_0dual-left[0]  free
+   weymouth_relax_left_soc_1_t_0_scenario_0dual-left[1]  free
+   weymouth_relax_left_auxiliary_2_t_0_scenario_0  free
+   weymouth_relax_left_soc_2_t_0_scenario_0dual-left[0]  free
+   weymouth_relax_left_soc_2_t_0_scenario_0dual-left[1]  free
+   weymouth_relax_right_auxiliary1_0_t_0_scenario_0  free
+   weymouth_relax_right_auxiliary2_0_t_0_scenario_0  free
+   weymouth_relax_right_soc0_t_0_scenario_0left[0]  free
+   weymouth_relax_right_soc0_t_0_scenario_0left[1]  free
+   weymouth_relax_right_auxiliary1_1_t_0_scenario_0  free
+   weymouth_relax_right_auxiliary2_1_t_0_scenario_0  free
+   weymouth_relax_right_soc1_t_0_scenario_0left[0]  free
+   weymouth_relax_right_soc1_t_0_scenario_0left[1]  free
+   weymouth_relax_right_auxiliary1_2_t_0_scenario_0  free
+   weymouth_relax_right_auxiliary2_2_t_0_scenario_0  free
+   weymouth_relax_right_soc2_t_0_scenario_0left[0]  free
+   weymouth_relax_right_soc2_t_0_scenario_0left[1]  free

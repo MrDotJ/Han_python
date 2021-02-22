@@ -224,8 +224,8 @@ class OneLayer:
         self.dual_compressor_pressure_up                    = None
         self.dual_well_upper_output_min                     = None
         self.dual_well_upper_output_max                     = None
-        self.dual_lower_well_output_min                     = None
-        self.dual_lower_well_output_max                     = None
+        self.dual_well_lower_output_min                     = None
+        self.dual_well_lower_output_max                     = None
         self.dual_gas_node_pressure_min                     = None
         self.dual_gas_node_pressure_max                     = None
         self.dual_gas_flow_in_and_out_great_zero            = None
@@ -296,8 +296,8 @@ class OneLayer:
         self.dual_compressor_pressure_up          = np.empty((self.gas_line_num,           T, K, ), dtype=object) 
         self.dual_well_upper_output_min           = np.empty((self.well_upper_num,         T, K, ), dtype=object) 
         self.dual_well_upper_output_max           = np.empty((self.well_upper_num,         T, K, ), dtype=object) 
-        self.dual_lower_well_output_min           = np.empty((self.well_lower_num,         T, K, ), dtype=object) 
-        self.dual_lower_well_output_max           = np.empty((self.well_lower_num,         T, K, ), dtype=object) 
+        self.dual_well_lower_output_min           = np.empty((self.well_lower_num,         T, K, ), dtype=object)
+        self.dual_well_lower_output_max           = np.empty((self.well_lower_num,         T, K, ), dtype=object)
         self.dual_gas_node_pressure_min           = np.empty((self.gas_node_num,           T, K, ), dtype=object) 
         self.dual_gas_node_pressure_max           = np.empty((self.gas_node_num,           T, K, ), dtype=object) 
         self.dual_gas_flow_in_and_out_great_zero  = np.empty((self.gas_line_num,           T, K, ), dtype=object)    
@@ -641,15 +641,15 @@ class OneLayer:
                         sum(self.lower_gas_well_output[  np.where(self.well_lower_connection_index    == node), t, k].flatten()) +  \
                         sum(self.gas_flow_out[           np.where(self.gas_pipe_end_node              == node), t, k].flatten()) -  \
                         sum(self.gas_flow_in[            np.where(self.gas_pipe_start_node            == node), t, k].flatten()) -   \
-                        sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten()) -  \
-                        sum((self.upper_chp_power_output[np.where(self.chp_upper_connection_gas_index == node), t, k] *
-                            self.chp_upper_coeff_p_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) + \
-                        sum((self.upper_chp_heat_output[ np.where(self.chp_upper_connection_gas_index == node), t, k] *
-                            self.chp_upper_coeff_h_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
-                        sum((self.lower_chp_power_output[np.where(self.chp_lower_connection_gas_index == node), t, k] *
-                            self.chp_lower_coeff_p_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten()) + \
-                        sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
-                            self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
+                        sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten()) #-  \
+                        # sum((self.upper_chp_power_output[np.where(self.chp_upper_connection_gas_index == node), t, k] *
+                        #     self.chp_upper_coeff_p_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
+                        # sum((self.upper_chp_heat_output[ np.where(self.chp_upper_connection_gas_index == node), t, k] *
+                        #     self.chp_upper_coeff_h_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
+                        # sum((self.lower_chp_power_output[np.where(self.chp_lower_connection_gas_index == node), t, k] *
+                        #     self.chp_lower_coeff_p_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten()) - \
+                        # sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
+                        #     self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
                     self.dual_node_gas_balance[node, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k))
                     dual_expr.append(expr1)
 
@@ -705,8 +705,8 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = self.lower_gas_well_output[well, t, k] - self.well_lower_output_min[well]
                     cons_expr2 = -1 * self.lower_gas_well_output[well, t, k] + self.well_lower_output_max[well]
-                    self.dual_lower_well_output_min[well, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
-                    self.dual_lower_well_output_max[well, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    self.dual_well_lower_output_min[well, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
+                    self.dual_well_lower_output_max[well, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
 
@@ -893,7 +893,7 @@ class OneLayer:
                     name='upper_gas_well_quoted_price_max' + str(t) + '_well_' + str(well)
                 )
 
-    def xxxxxxxbuild_upper_objectivexxx(self):
+    def build_upper_objective(self):
         obj_k = []
         for k in range(K):
             expected_cost = []
@@ -901,13 +901,19 @@ class OneLayer:
                 for t in range(T):
                     expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[self.chp_upper_connection_heater_index[chp], t, k])
                     expected_cost.append(self.upper_chp_power_output[chp, t, k] * self.dual_node_power_balance[self.chp_upper_connection_power_index[chp], t, k])
+                    expected_cost.append(-1 * self.upper_chp_heat_output[chp, t, k] * self.chp_upper_coeff_h_1[chp] - self.upper_chp_power_output[chp, t, k] * self.chp_upper_coeff_p_1[chp])
             for gen in range(self.generator_upper_num):
                 for t in range(T):
                     expected_cost.append(self.upper_generator_power_output[gen, t, k] * self.dual_node_power_balance[self.generator_upper_connection_index[gen], t, k])
-            obj_k.append(sum(expected_cost))
+                    expected_cost.append(-1 * self.upper_generator_power_output[gen, t, k] * self.generator_upper_cost[gen])
+            for well in range(self.well_upper_num):
+                for t in range(T):
+                    expected_cost.append(self.upper_gas_well_output[well, t, k] * self.dual_node_gas_balance[self.well_upper_connection_index[well], t, k])
+                    expected_cost.append(-1 * self.upper_gas_well_output[well, t, k] * self.well_upper_cost[well])
+            obj_k.append(-1 * sum(expected_cost))
         self.obj_k = obj_k
 
-    def build_upper_objective(self):
+    def build_upper_objective_(self):
         obj_k = []
         obj_k_p = []
         obj_k_h = []
@@ -1003,8 +1009,8 @@ class OneLayer:
 
             for well in range(self.well_lower_num):
                 for t in range(T):
-                    objs_revenue.append(-1 * self.dual_lower_well_output_min[well, t, k] * self.well_lower_output_min[well])
-                    objs_revenue.append(1 * self.dual_lower_well_output_max[well, t, k] * self.well_lower_output_max[well])
+                    objs_revenue.append(-1 * self.dual_well_lower_output_min[well, t, k] * self.well_lower_output_min[well])
+                    objs_revenue.append(1 * self.dual_well_lower_output_max[well, t, k] * self.well_lower_output_max[well])
 
             # TODO: change to minus - plus
             for node in range(self.gas_node_num):
@@ -1031,10 +1037,10 @@ class OneLayer:
     def optimize(self, distribution):
         self.model.setParam("IntegralityFocus", 1)
         self.model.setParam("NonConvex", 2)
-        self.model.setParam("OutputFlag", 0)
+        # self.model.setParam("OutputFlag", 0)
 
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
-        self.model.setObjective((np.array(self.obj_k) + np.array(self.objection_aux_update)).dot(np.array(distribution)))
+        # self.model.setObjective((np.array(self.obj_k) + np.array(self.objection_aux_update)).dot(np.array(distribution)))
         self.model.optimize()
 
         expected_cost = []

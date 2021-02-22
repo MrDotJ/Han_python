@@ -15,9 +15,9 @@ def get_config():
     ])
 
     lower_generator_info = np.array([
-        [0,      0.4,    0.1,       1.5,      1.5,       16],
-        [3,      1.4,    0.1,       1.5,      1.5,       16],
-        [4,      1.3,    0.1,       1.5,      1.5,       16]
+        [0,      0.4,    0.0,       1.5,      1.5,       16],
+        [3,      1.4,    0.0,       1.5,      1.5,       16],
+        [4,      1.3,    0.0,       1.5,      1.5,       16]
     ])
 
     wind_output = np.array([
@@ -33,7 +33,7 @@ def get_config():
             [1442, 1190, 1089, 1203, 929, 543, 361, 318, 360, 352, 467, 625,
              718, 937, 1226, 1599, 1812, 1729, 1608, 1970, 2101, 1958, 1718, 1490]
         ]
-    ]) / 1000 * 0.1
+    ]) / 1000 * 0.
 
 
     # bus
@@ -50,7 +50,7 @@ def get_config():
     power_load_demand_total = np.array([
         2.5, 2.65, 2.05, 2.15, 2.25, 2.55, 2.35,
         2.5,  2.625, 2.825,  3.125,  3.625, 3.4,   3.595, 2.85,  3.075, 3.255, 3.42,  3.54,
-        3.63,   3.645, 3.72,  3.825, 3.84,  3.69,  3.675, 3.555, 3.555, 3.405, 3.015, 2.94, ])      *  1
+        3.63,   3.645, 3.72,  3.825, 3.84,  3.69,  3.675, 3.555, 3.555, 3.405, 3.015, 2.94, ])   *  0.5
 
     # Bus / total
     power_load_info = np.array([
@@ -132,8 +132,8 @@ def get_config():
     ])
 
     upper_chp_POWER = np.array([
-        [0.81,     2.97,    2.55,       0],
-        [0.81,     2.97,    2.55,       0]
+        [0.81 * 0,     2.97 * 0,    2.55 * 0,       0],
+        [0.81 * 0,     2.97 * 0,    2.55 * 0,       0]
     ]) * 1
 
     upper_chp_HEAT = np.array([
@@ -142,8 +142,8 @@ def get_config():
     ]) * 1
 
     lower_chp_POWER = np.array([
-        [0.247,     0.215,   0.081,    0.0],
-        [0.247,     0.215,   0.081,    0.0]
+        [0.247 * 0 ,     0.215 * 0,   0.081 * 0,    0.0],
+        [0.247 * 0 ,     0.215 * 0,   0.081 * 0,    0.0]
     ]) * 1
 
     lower_chp_HEAT = np.array([
@@ -203,7 +203,7 @@ def get_config():
         47.09677419,
         45.16129032, 44.19354839, 43.22580645, 42.25806452, 41.29032258, 41.29032258, 41.29032258, 42.25806452,
         43.22580645, 44.19354839, 44.19354839, 44.19354839, 45.16129032, 46.12903226, 47.09677419, 47.09677419],
-    ]) / 50 * 1.
+    ]) / 50 * 0.1
 
     upper_chp_power_index = np.array([
         2, 2
@@ -271,27 +271,76 @@ def get_config():
         'chp_lower_coeff_const': lower_chp_info[:, 5],
     }
 
+    # # use config
+    # upper_well_info = np.array([
+    # #  node    max(Sm3/h)      min(Sm3/h)     cost($/Sm3)    quoted_max($/Sm3)
+    #     [2,       3.36,            0,            2.2,             4.4],
+    # ])
+    # lower_well_info = np.array([
+    #     [3,       0.336,            0,           2.8 ],
+    # ])
+    # gas_pipe_line_info = np.array([
+    # #  start     end       weymouth     linepack   index   is_active   flow_min   flow_max
+    #     [2,       1,        0.193,       0.0271,     0,       0,           0,        2 ],
+    #     [3,       1,        0.193,       0.0271,     1,       0,           0,        2 ],
+    #     [1,       0,        0.193,       0.0271,     2,       0,           0,        2 ],
+    # ])
+    #
+    # gas_node_info = np.array([
+    # #   Node     MaxPressure(bar)   MinPressure(bar)
+    #     [0,           8.28,           7.34 ],
+    #     [1,           8.28,           7.34 ],
+    #     [2,           8.28,           7.34 ],
+    #     [3,           8.28,           7.34 ],
+    # ])
+    #
+    # compressor_info = np.array([
+    # #  start         end           CompFact
+    # #    [2,           1,              2 ],
+    # ])
+    #
+    # gas_load_total = np.array([
+    #      1,   1.1,  1.15, 1.2, 1.25, 1.15, 1.1,  1,   0.95, 0.9, 0.88, 0.85,
+    #      0.9, 0.95, 0.99, 1,   1.1,  1.05, 1.05, 1.1, 1.15, 1.1, 1,    0.95
+    # ]) * 1
+    #
+    # gas_load_info = np.array([
+    # #   node     percent
+    #     [0,      0.5],
+    #     [0,      0.2],
+    #     [0,      0.3],
+    # ])
+    #
+    # chp_upper_connection_gas_index = np.array(
+    #     [0, 1]
+    # )
+    # chp_lower_connection_gas_index = np.array(
+    #     [0, 1]
+    # )
 
+
+
+    # use config
     upper_well_info = np.array([
     #  node    max(Sm3/h)      min(Sm3/h)     cost($/Sm3)    quoted_max($/Sm3)
-        [2,       3.36,            0,            2.2,             4.4],
+        [3,       3.36,             0,            2.2,             4.4],
     ])
     lower_well_info = np.array([
-        [3,       0.336,            0,           2.8 ],
+        [2,       3.36,             0,            2.8 ],
     ])
     gas_pipe_line_info = np.array([
     #  start     end       weymouth     linepack   index   is_active   flow_min   flow_max
-        [2,       1,        0.193,       0.0271,     0,       0,           0,        2 ],
-        [3,       1,        0.193,       0.0271,     1,       0,           0,        2 ],
+        [3,       1,        0.193,       0.0271,     0,       0,           0,        2 ],
+        [2,       1,        0.193,       0.0271,     1,       0,           0,        2 ],
         [1,       0,        0.193,       0.0271,     2,       0,           0,        2 ],
     ])
 
     gas_node_info = np.array([
     #   Node     MaxPressure(bar)   MinPressure(bar)
-        [0,           8.28,           7.34 ],
-        [1,           8.28,           7.34 ],
-        [2,           8.28,           7.34 ],
-        [3,           8.28,           7.34 ],
+        [0,           8.28 * 10,           7.34 * 0 ],
+        [1,           8.28 * 10,           7.34 * 0 ],
+        [2,           8.28 * 10,           7.34 * 0 ],
+        [3,           8.28 * 10,           7.34 * 0 ],
     ])
 
     compressor_info = np.array([
@@ -312,11 +361,58 @@ def get_config():
     ])
 
     chp_upper_connection_gas_index = np.array(
-        [0, 1]
+        [0, 0]
     )
     chp_lower_connection_gas_index = np.array(
-        [0, 1]
+        [0, 0]
     )
+
+
+
+
+
+    # test config
+    # upper_well_info = np.array([
+    # #  node    max(Sm3/h)      min(Sm3/h)     cost($/Sm3)    quoted_max($/Sm3)
+    #     [1,       3.36,            0,            2.2,             4.4],
+    # ])
+    # lower_well_info = np.array([
+    #     [1,       0.336,            0,           2.8 ],
+    # ])
+    # gas_pipe_line_info = np.array([
+    # #  start     end       weymouth     linepack   index   is_active   flow_min   flow_max
+    #     [1,       0,        0.193,       0.0271,     0,       0,           0,        2 ],
+    # ])
+    #
+    # gas_node_info = np.array([
+    # #   Node     MaxPressure(bar)   MinPressure(bar)
+    #     [0,           828,           0 ],
+    #     [1,           828,           0 ],
+    # ])
+    #
+    # compressor_info = np.array([
+    # #  start         end           CompFact
+    # #    [2,           1,              2 ],
+    # ])
+    #
+    # gas_load_total = np.array([
+    #      1,   1.1,  1.15, 1.2, 1.25, 1.15, 1.1,  1,   0.95, 0.9, 0.88, 0.85,
+    #      0.9, 0.95, 0.99, 1,   1.1,  1.05, 1.05, 1.1, 1.15, 1.1, 1,    0.95
+    # ]) * 1
+    #
+    # gas_load_info = np.array([
+    # #   node     percent
+    #     [0,      0.5],
+    #     [0,      0.2],
+    #     [0,      0.3],
+    # ])
+    #
+    # chp_upper_connection_gas_index = np.array(
+    #     [0, 1]
+    # )
+    # chp_lower_connection_gas_index = np.array(
+    #     [0, 1]
+    # )
     gas_system = {
         'well_upper_num': len(upper_well_info),
         'well_lower_num': len(lower_well_info),
