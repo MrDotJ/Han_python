@@ -1,7 +1,6 @@
-from resource.utility import *
+from .resource.utility import *
 from resource.config3_with_gas import T, K
 from math import sqrt
-
 
 class OneLayer:
     def __init__(self, power_system, heat_system, chp_system, gas_system):
@@ -307,21 +306,21 @@ class OneLayer:
         self.gas_linepack                         = \
             tonp( self.model.addVars(self.gas_line_num,   T, K, name='gas_linepack',               lb=-1 * INFINITY, ub=INFINITY ) )
 
-        self.dual_node_gas_balance                = np.empty((self.gas_node_num,           T, K, ), dtype=object) 
-        self.dual_linepack_with_pressure          = np.empty((self.gas_line_num,           T, K, ), dtype=object) 
-        self.dual_linepack_with_time              = np.empty((self.gas_line_num,           T, K, ), dtype=object) 
-        self.dual_compressor_consume              = np.empty((self.gas_line_num,           T, K, ), dtype=object) 
-        self.dual_compressor_pressure_up          = np.empty((self.gas_line_num,           T, K, ), dtype=object) 
-        self.dual_well_upper_output_min           = np.empty((self.well_upper_num,         T, K, ), dtype=object) 
-        self.dual_well_upper_output_max           = np.empty((self.well_upper_num,         T, K, ), dtype=object) 
+        self.dual_node_gas_balance                = np.empty((self.gas_node_num,           T, K, ), dtype=object)
+        self.dual_linepack_with_pressure          = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+        self.dual_linepack_with_time              = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+        self.dual_compressor_consume              = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+        self.dual_compressor_pressure_up          = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+        self.dual_well_upper_output_min           = np.empty((self.well_upper_num,         T, K, ), dtype=object)
+        self.dual_well_upper_output_max           = np.empty((self.well_upper_num,         T, K, ), dtype=object)
         self.dual_well_lower_output_min           = np.empty((self.well_lower_num,         T, K, ), dtype=object)
         self.dual_well_lower_output_max           = np.empty((self.well_lower_num,         T, K, ), dtype=object)
-        self.dual_gas_node_pressure_min           = np.empty((self.gas_node_num,           T, K, ), dtype=object) 
-        self.dual_gas_node_pressure_max           = np.empty((self.gas_node_num,           T, K, ), dtype=object) 
-        self.dual_gas_flow_in_and_out_great_zero  = np.empty((self.gas_line_num,           T, K, ), dtype=object)    
-        self.dual_weymouth_aux_left               = np.empty((self.gas_line_num,           T, K, ), dtype=object)    
-        self.dual_weymouth_relax_left_left        = np.empty((self.gas_line_num,           T, K, ), dtype=object)    
-        self.dual_weymouth_relax_left_right       = np.empty((self.gas_line_num,           T, K, ), dtype=object)    
+        self.dual_gas_node_pressure_min           = np.empty((self.gas_node_num,           T, K, ), dtype=object)
+        self.dual_gas_node_pressure_max           = np.empty((self.gas_node_num,           T, K, ), dtype=object)
+        self.dual_gas_flow_in_and_out_great_zero  = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+        self.dual_weymouth_aux_left               = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+        self.dual_weymouth_relax_left_left        = np.empty((self.gas_line_num,           T, K, ), dtype=object)
+        self.dual_weymouth_relax_left_right       = np.empty((self.gas_line_num,           T, K, ), dtype=object)
         self.dual_gas_flow_in_min                 = np.empty((self.gas_line_num,           T, K, ), dtype=object)
         self.dual_gas_flow_in_max                 = np.empty((self.gas_line_num,           T, K, ), dtype=object)
         self.dual_gas_flow_out_min                = np.empty((self.gas_line_num,           T, K, ), dtype=object)
@@ -422,9 +421,8 @@ class OneLayer:
                         sum(self.line_power_flow[np.where(self.ele_line_start == node), t, k].flatten()) +  \
                         sum(self.line_power_flow[np.where(self.ele_line_end == node), t, k].flatten()) -  \
                         sum(self.ele_load[np.where(self.ele_load_index == node), t].flatten())
-                    name1 = 'dual_node_power_balance_' + str(t) + '_' + str(node) + '_' + 'scenario' + str(k)
-                    self.dual_node_power_balance[node, t, k], expr1 = Complementary_equal(1 * cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    name1 = 'node_power_balance_' + str(t) + '_' + str(node) + '_' + 'scenario' + str(k)
+                    Complementary_equal(1 * cons_expr1, self.model, name1)
         # 直流潮流
         for line in range(self.ele_line_num):
             for t in range(T):
@@ -433,15 +431,13 @@ class OneLayer:
                                   self.bus_angle[self.ele_line_end[line], t, k]) / self.line_reactance[line] - \
                                  self.line_power_flow[line, t, k]
                     name1 = 'dual_angle_line_' + str(t) + 'line' + str(line) + 'scenario' + str(k)
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    Complementary_equal(cons_expr1, self.model, name1)
         # 参考电节点
         for t in range(T):
             for k in range(K):
                 cons_expr1 = self.bus_angle[2, t, k]
                 name1 = 'dual_reference_angle_' + str(t) + 'scenario' + str(k)
-                _, expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                dual_expr.append(expr1)
+                Complementary_equal(cons_expr1, self.model, name1)
         # 电节点相角范围
         for node in range(self.ele_node_num):
             for t in range(T):
@@ -450,10 +446,8 @@ class OneLayer:
                     cons_expr2 = 3 - self.bus_angle[node, t, k]
                     name1 = 'dual_angle_min' + str(node) + str(t) + str(k)
                     name2 = 'dual_angle_max' + str(node) + str(t) + str(k)
-                    self.dual_bus_angle_min[node, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_bus_angle_max[node, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 线路功率范围
         for line in range(self.ele_line_num):
             for t in range(T):
@@ -462,10 +456,8 @@ class OneLayer:
                     cons_expr2 = -1 * self.line_power_flow[line, t, k] + self.ele_line_capacity[line]
                     name1 = 'dual_line_power_flow_great' + str(t) + '_' + str(line) + 'scenario' + str(k)
                     name2 = 'dual_line_power_flow_less' + str(t) + '_' + str(line) + 'scenario' + str(k)
-                    self.dual_line_power_flow_great[line, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_line_power_flow_less[line, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 上层 发电机 辐值 上下限
         for gen in range(self.generator_upper_num):
             for t in range(T):
@@ -474,10 +466,8 @@ class OneLayer:
                     cons_expr2 = -1 * self.upper_generator_power_output[gen, t, k] + self.generator_upper_max[gen]
                     name1 = 'dual_upper_generator_power_output_min' + str(t) + '_' + str(gen) + 'scenario' + str(k)
                     name2 = 'dual_upper_generator_power_output_max' + str(t) + '_' + str(gen) + 'scenario' + str(k)
-                    self.dual_upper_generator_power_output_min[gen, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_upper_generator_power_output_max[gen, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 下层 发电机 辐值 上下限
         for gen in range(self.generator_lower_num):
             for t in range(T):
@@ -486,10 +476,8 @@ class OneLayer:
                     cons_expr2 = -1 * self.lower_generator_power_output[gen, t, k] + self.generator_lower_max[gen]
                     name1 = 'dual_lower_generator_power_output_min' + str(t) + '_' + str(gen) + 'scenario' + str(k)
                     name2 = 'dual_lower_generator_power_output_max' + str(t) + '_' + str(gen) + 'scenario' + str(k)
-                    self.dual_lower_generator_power_output_min[gen, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_lower_generator_power_output_max[gen, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 上层 发电机 爬坡约束 0 - T-2
         for gen in range(self.generator_upper_num):
             for t in range(T - 1):
@@ -500,10 +488,8 @@ class OneLayer:
                                  self.upper_generator_power_output[gen, t, k] + self.generator_upper_ramp_down[gen]
                     name1 = 'dual_upper_generator_power_output_ramp_up' + str(t) + '_' + str(gen) + 'scenario' + str(k)
                     name2 = 'dual_lower_generator_power_output_ramp_down' + str(t) + '_' + str(gen) + 'scenario' + str(k)
-                    _, expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    _, expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 下层 发电机 爬坡约束 0 - T-2
         for gen in range(self.generator_lower_num):
             for t in range(T-1):
@@ -514,10 +500,8 @@ class OneLayer:
                                  self.lower_generator_power_output[gen, t, k] + self.generator_lower_ramp_down[gen]
                     name1 = 'dual_lower_generator_power_output_ramp_up' + str(t) + '_' + str(gen) + 'scenario' + str(k)
                     name2 = 'dual_lower_generator_power_output_ramp_down' + str(t) + '_' + str(gen) + 'scenario' + str(k)
-                    self.dual_lower_generator_power_output_ramp_up[gen, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_lower_generator_power_output_ramp_down[gen, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 上层 发电机 爬坡约束 T-1
         for gen in range(self.generator_upper_num):
             for t in [T - 1]:
@@ -528,10 +512,8 @@ class OneLayer:
                                  self.upper_generator_power_output[gen, t, k] + self.generator_upper_ramp_down[gen]
                     name1 = 'dual_upper_generator_power_output_ramp_up' + str(t) + '_' + str(gen) + 'scenario' + str(k)
                     name2 = 'dual_lower_generator_power_output_ramp_down' + str(t) + '_' + str(gen) + 'scenario' + str(k)
-                    _, expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    _, expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 下层 发电机 爬坡约束 T-1
         for gen in range(self.generator_lower_num):
             for t in [T-1]:
@@ -542,10 +524,8 @@ class OneLayer:
                                  self.lower_generator_power_output[gen, t, k] + self.generator_lower_ramp_down[gen]
                     name1 = 'dual_lower_generator_power_output_ramp_up' + str(t) + '_' + str(gen) + 'scenario' + str(k)
                     name2 = 'dual_lower_generator_power_output_ramp_down' + str(t) + '_' + str(gen) + 'scenario' + str(k)
-                    self.dual_lower_generator_power_output_ramp_up[gen, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_lower_generator_power_output_ramp_down[gen, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
 
         self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
 
@@ -564,12 +544,9 @@ class OneLayer:
                     name1 = 'dual_upper_chp_power_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k)
                     name2 = 'dual_upper_chp_heat_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k)
                     name3 = 'dual_upper_chp_point_sum_one' + str(t) + '_' + str(chp) + 'scenario' + str(k)
-                    self.dual_upper_chp_power_output[chp, t, k] , expr1 = Complementary_equal(-1 * cons_expr1, self.model, name1)
-                    self.dual_upper_chp_heat_output[chp, t, k]  , expr2 = Complementary_equal(-1 * cons_expr2, self.model, name2)
-                    self.dual_upper_chp_point_sum_one[chp, t, k], expr3 = Complementary_equal(cons_expr3, self.model, name3)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
-                    dual_expr.append(expr3)
+                    Complementary_equal(-1 * cons_expr1, self.model, name1)
+                    Complementary_equal(-1 * cons_expr2, self.model, name2)
+                    Complementary_equal(cons_expr3, self.model, name3)
         # 下层chp 电出力 热出力 及 顶点和 为1
         for chp in range(self.chp_lower_num):
             for t in range(T):
@@ -582,12 +559,9 @@ class OneLayer:
                     name1 = 'dual_lower_chp_power_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k)
                     name2 = 'dual_lower_chp_heat_output_' + str(t) + '_' + str(chp) + 'scenario' + str(k)
                     name3 = 'dual_lower_chp_point_sum_one' + str(t) + '_' + str(chp) + 'scenario' + str(k)
-                    self.dual_lower_chp_power_output[chp, t, k] , expr1 = Complementary_equal(-1 * cons_expr1, self.model, name1)
-                    self.dual_lower_chp_heat_output[chp, t, k]  , expr2 = Complementary_equal(-1 * cons_expr2, self.model, name2)
-                    self.dual_lower_chp_point_sum_one[chp, t, k], expr3 = Complementary_equal(cons_expr3, self.model, name3)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
-                    dual_expr.append(expr3)
+                    Complementary_equal(-1 * cons_expr1, self.model, name1)
+                    Complementary_equal(-1 * cons_expr2, self.model, name2)
+                    Complementary_equal(cons_expr3, self.model, name3)
         # 上层 顶点 范围
         for chp in range(self.chp_upper_num):
             for point in range(self.chp_point_num):
@@ -597,10 +571,8 @@ class OneLayer:
                         cons_expr2 = -1 * self.upper_chp_point[chp, point, t, k] + 1
                         name1 = 'dual_upper_chp_point_great_zero' + str(t) + '_' + str(chp) + 'scenario' + str(k)
                         name2 = 'dual_upper_chp_point_less_one' + str(t) + '_' + str(chp) + 'scenario' + str(k)
-                        self.dual_upper_chp_point_great_zero[chp, point, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                        self.dual_upper_chp_point_less_one[chp, point, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                        dual_expr.append(expr1)
-                        dual_expr.append(expr2)
+                        Complementary_great(cons_expr1, self.model, name1)
+                        Complementary_great(cons_expr2, self.model, name2)
         # 下层 顶点 范围
         for chp in range(self.chp_lower_num):
             for point in range(self.chp_point_num):
@@ -610,10 +582,8 @@ class OneLayer:
                         cons_expr2 = -1 * self.lower_chp_point[chp, point, t, k] + 1
                         name1 = 'dual_lower_chp_point_great_zero' + str(t) + '_' + str(chp) + 'scenario' + str(k)
                         name2 = 'dual_lower_chp_point_less_one' + str(t) + '_' + str(chp) + 'scenario' + str(k)
-                        self.dual_lower_chp_point_great_zero[chp, point, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                        self.dual_lower_chp_point_less_one[chp, point, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                        dual_expr.append(expr1)
-                        dual_expr.append(expr2)
+                        Complementary_great(cons_expr1, self.model, name1)
+                        Complementary_great(cons_expr2, self.model, name2)
         # 加热站 热平衡
         for heater in range(self.heat_heater_num):
             for t in range(T):
@@ -625,8 +595,7 @@ class OneLayer:
                         (self.heat_node_tempe_supply[self.heater_connection_index[heater], t, k] -
                          self.heat_node_tempe_return[self.heater_connection_index[heater], t, k])
                     name1 = 'dual_heater_balance' + str(t) + '_' + str(heater) + 'scenario' + str(k)
-                    self.dual_heater_balance[heater, t, k], expr1 = Complementary_equal(1 * cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    Complementary_equal(1 * cons_expr1, self.model, name1)
         # 换热站 热平衡
         for exchanger in range(self.heat_exchanger_num):
             for t in range(T):
@@ -637,8 +606,7 @@ class OneLayer:
                                  (self.heat_node_tempe_supply[self.exchanger_connection_index[exchanger], t, k] -
                                   self.heat_node_tempe_return[self.exchanger_connection_index[exchanger], t, k])
                     name1 = 'dual_exchanger_balance' + str(t) + '_' + str(exchanger) + str(k)
-                    self.dual_exchanger_balance[exchanger, t, k], expr1 = Complementary_equal(-1*cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    Complementary_equal(-1*cons_expr1, self.model, name1)
         # 供热网， 回热网 线路起点连接
         for line in range(self.heat_pipe_num):
             for t in range(T):
@@ -649,10 +617,8 @@ class OneLayer:
                                  self.heat_node_tempe_return[self.heat_pipe_start_node_return[line], t, k]
                     name1 = 'dual_line_temp_start_supply_' + str(t) + '_' + str(line) + 'scenario' + str(k)
                     name2 = 'dual_line_temp_start_return' + str(t) + '_' + str(line) + 'scenario' + str(k)
-                    _, expr1 = Complementary_equal(-1 * cons_expr1, self.model, name1)
-                    _, expr2 = Complementary_equal(-1 * cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_equal(-1 * cons_expr1, self.model, name1)
+                    Complementary_equal(-1 * cons_expr2, self.model, name2)
         # 供热网， 回热网 线路终点连接
         for node in range(self.heat_node_num):      # mix constrains
             for t in range(T):
@@ -669,10 +635,8 @@ class OneLayer:
                                  (sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_end_node_return == node)]))
                     name1 = 'dual_mix_constraints_supply' + str(t) + '_' + str(node) + 'scenario' + str(k)
                     name2 = 'dual_mix_constraints_return' + str(t) + '_' + str(node) + 'scenario' + str(k)
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    _, expr2 = Complementary_equal(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_equal(cons_expr1, self.model, name1)
+                    Complementary_equal(cons_expr2, self.model, name2)
         # 供热网， 回热网的 热损耗
         for line in range(self.heat_pipe_num):
             for t in range(T):
@@ -683,10 +647,8 @@ class OneLayer:
                                  ((1 - 0.0001 * (self.heat_pipe_length[line] * 1) / 1000) * self.heat_pipe_start_tempe_return[line, t, k])
                     name1 = 'dual_heat_loss_supply' + str(t) + '_' + str(line) + 'scenario' + str(k)
                     name2 = 'dual_heat_loss_return' + str(t) + '_' + str(line) + 'scenario' + str(k)
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    _, expr2 = Complementary_equal(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_equal(cons_expr1, self.model, name1)
+                    Complementary_equal(cons_expr2, self.model, name2)
         # 加热站 供热网/回热网 的温度上下限
         for heater in range(self.heat_heater_num):
             for t in range(T):
@@ -699,14 +661,10 @@ class OneLayer:
                     name2 = 'dual_heater_supply_max' + str(t) + '_' + str(heater) + 'scenario' + str(k)
                     name3 = 'dual_heater_return_min' + str(t) + '_' + str(heater) + 'scenario' + str(k)
                     name4 = 'dual_heater_return_max' + str(t) + '_' + str(heater) + 'scenario' + str(k)
-                    self.dual_heater_supply_min[heater, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_heater_supply_max[heater, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    self.dual_heater_return_min[heater, t, k], expr3 = Complementary_great(cons_expr3, self.model, name3)
-                    self.dual_heater_return_max[heater, t, k], expr4 = Complementary_great(cons_expr4, self.model, name4)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
-                    dual_expr.append(expr3)
-                    dual_expr.append(expr4)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
+                    Complementary_great(cons_expr3, self.model, name3)
+                    Complementary_great(cons_expr4, self.model, name4)
         # 换热站 供热网/回热网 的温度 上下限
         for exchanger in range(self.heat_exchanger_num):
             for t in range(T):
@@ -723,14 +681,10 @@ class OneLayer:
                     name2 = 'dual_exchanger_supply_max' + str(t) + '_' + str(exchanger) + 'scenario' + str(k)
                     name3 = 'dual_exchanger_return_min' + str(t) + '_' + str(exchanger) + 'scenario' + str(k)
                     name4 = 'dual_exchanger_return_max' + str(t) + '_' + str(exchanger) + 'scenario' + str(k)
-                    self.dual_exchanger_supply_min[exchanger, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_exchanger_supply_max[exchanger, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    self.dual_exchanger_return_min[exchanger, t, k], expr3 = Complementary_great(cons_expr3, self.model, name3)
-                    self.dual_exchanger_return_max[exchanger, t, k], expr4 = Complementary_great(cons_expr4, self.model, name4)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
-                    dual_expr.append(expr3)
-                    dual_expr.append(expr4)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
+                    Complementary_great(cons_expr3, self.model, name3)
+                    Complementary_great(cons_expr4, self.model, name4)
         self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
 
     def build_gas_system_original_and_dual_constrains(self):
@@ -744,18 +698,17 @@ class OneLayer:
                         sum(self.lower_gas_well_output[  np.where(self.well_lower_connection_index    == node), t, k].flatten()) +  \
                         sum(self.gas_flow_out[           np.where(self.gas_pipe_end_node              == node), t, k].flatten()) -  \
                         sum(self.gas_flow_in[            np.where(self.gas_pipe_start_node            == node), t, k].flatten()) -   \
-                        sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten()) #-  \
-                        # sum((self.upper_chp_power_output[np.where(self.chp_upper_connection_gas_index == node), t, k] *
-                        #     self.chp_upper_coeff_p_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
-                        # sum((self.upper_chp_heat_output[ np.where(self.chp_upper_connection_gas_index == node), t, k] *
-                        #     self.chp_upper_coeff_h_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
-                        # sum((self.lower_chp_power_output[np.where(self.chp_lower_connection_gas_index == node), t, k] *
-                        #     self.chp_lower_coeff_p_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten()) - \
-                        # sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
-                        #     self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
+                        sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten()) -  \
+                        sum((self.upper_chp_power_output[np.where(self.chp_upper_connection_gas_index == node), t, k] *
+                            self.chp_upper_coeff_p_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
+                        sum((self.upper_chp_heat_output[ np.where(self.chp_upper_connection_gas_index == node), t, k] *
+                            self.chp_upper_coeff_h_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
+                        sum((self.lower_chp_power_output[np.where(self.chp_lower_connection_gas_index == node), t, k] *
+                            self.chp_lower_coeff_p_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten()) - \
+                        sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
+                            self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
                     name1 = 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k)
-                    self.dual_node_gas_balance[node, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    Complementary_equal(cons_expr1, self.model, name1)
         # 气管网 的 linepack 与 气压 / 时间的关系 0 - T-2
         for line in self.gas_inactive_line:
             for t in range(0, T-1):
@@ -767,10 +720,8 @@ class OneLayer:
                                  self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
                     name1 = 'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_linepack_with_pressure[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    self.dual_linepack_with_time[line, t, k], expr2 = Complementary_equal(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_equal(cons_expr1, self.model, name1)
+                    Complementary_equal(cons_expr2, self.model, name2)
         # 气管网 的 linepack 与 气压/时间 的关系 T-1
         for line in self.gas_inactive_line:
             for t in [T-1]:
@@ -782,18 +733,15 @@ class OneLayer:
                                  self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
                     name1 = 'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_linepack_with_pressure[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    self.dual_linepack_with_time[line, t, k], expr2 = Complementary_equal(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_equal(cons_expr1, self.model, name1)
+                    Complementary_equal(cons_expr2, self.model, name2)
         # active 线路 的气损耗
         for line in self.gas_active_line:
             for t in range(T):
                 for k in range(K):
                     cons_expr1 = self.gas_flow_out[line, t, k] - 0.97 * self.gas_flow_in[line, t, k]
                     name1 = 'dual_gas_flow_active_line_' + str(line) + '_time_' + str(t) + '_scenario_' + str(k)
-                    self.dual_compressor_consume[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    Complementary_equal(cons_expr1, self.model, name1)
         # active 线路 气压变化
         for compressor, line in enumerate(self.gas_active_line):
             for t in range(T):
@@ -801,8 +749,7 @@ class OneLayer:
                     cons_expr1 = self.gas_compressor_coeff[compressor] * self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] - \
                                  self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]
                     name1 = 'dual_compressor_pressure_' + str(compressor) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_compressor_pressure_up[compressor, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    Complementary_great(cons_expr1, self.model, name1)
         # 上层 气井 的 出力范围
         for well in range(self.well_upper_num):
             for t in range(T):
@@ -811,10 +758,8 @@ class OneLayer:
                     cons_expr2 = -1 * self.upper_gas_well_output[well, t, k] + self.well_upper_output_max[well]
                     name1 = 'dual_upper_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_upper_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_well_upper_output_min[well, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_well_upper_output_max[well, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 下层 气井 的 出力范围
         for well in range(self.well_lower_num):
             for t in range(T):
@@ -823,10 +768,8 @@ class OneLayer:
                     cons_expr2 = -1 * self.lower_gas_well_output[well, t, k] + self.well_lower_output_max[well]
                     name1 = 'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_well_lower_output_min[well, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_well_lower_output_max[well, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 节点 气压 上下限
         for node in range(self.gas_node_num):
             for t in range(T):
@@ -835,10 +778,8 @@ class OneLayer:
                     cons_expr2 = self.gas_node_pressure_max[node] - self.gas_node_pressure[node, t, k]
                     name1 = 'dual_node_pressure_min_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_node_pressure_max_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_gas_node_pressure_min[node, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_gas_node_pressure_max[node, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
         # 流量 正向
         # for line in range(self.gas_line_num):
         #     for t in range(T):
@@ -860,22 +801,17 @@ class OneLayer:
                     name2 = 'dual_gas_flow_in_max'  + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name3 = 'dual_gas_flow_out_min' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name4 = 'dual_gas_flow_out_max' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_gas_flow_in_min[line, t, k],  expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_gas_flow_in_max[line, t, k],  expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    self.dual_gas_flow_out_min[line, t, k], expr3 = Complementary_great(cons_expr3, self.model, name3)
-                    self.dual_gas_flow_out_max[line, t, k], expr4 = Complementary_great(cons_expr4, self.model, name4)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
-                    dual_expr.append(expr3)
-                    dual_expr.append(expr4)
+                    Complementary_great(cons_expr1, self.model, name1)
+                    Complementary_great(cons_expr2, self.model, name2)
+                    Complementary_great(cons_expr3, self.model, name3)
+                    Complementary_great(cons_expr4, self.model, name4)
         # PCCP 大于 0
         for line in range(self.gas_line_num):
             for t in range(T):
                 for k in range(K):
                     cons_expr1 = self.pccp_relax[line, t, k]
                     name1 = 'dual_pccp_relax_great_zero' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_pccp_relax_great_zero[line, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    Complementary_great(cons_expr1, self.model, name1)
         # weymouth 方程 的大于 部分
         for line in self.gas_inactive_line:
             for t in range(T):
@@ -883,65 +819,28 @@ class OneLayer:
                     # 辅助变量
                     cons_expr1 = self.aux_weymouth_left[line, t, k] - (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2
                     name1 = 'weymouth_relax_left_auxiliary_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_weymouth_aux_left[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    # --- 线性化 start
-                    # aux_pressure —— (pressure)^2
-                    point_x = np.linspace(PRESSURE_START, PRESSURE_END, SPLIT_POINT)
-                    point_y = point_x ** 2
-                    gradient = 2 * point_x
-                    for point in range(20):
-                        # gradient * ( x - x0 ) = y - y0
-                        expr_p1 = self.aux_pressure[line, t, k, point] - \
-                                  gradient[point] * (self.gas_node_pressure[line, t, k, point] - point_x[point]) + \
-                                  point_y[point]
-                    for point in range(20):
-                        # (y-y2)/(y1-y2) = (x-x2)/(x1-x2)
-                        expr_p1 = (self.gas_node_pressure[line, t, k, point] - point_x[point + 1]) / \
-                                  (point_x[point] - point_x[point + 1]) * \
-                                  (point_y[point] - point_y[point + 1]) + point_y[point + 1] - \
-                                  self.aux_pressure[line, t, k, point]
-                    # aux_flow —— (aux_weymouth_left)^2  akg: (flow_in + flow_out)^2
-                    point_x = [1]
-                    point_y = [1]
-                    gradient = [1]
-                    for point in range(20):
-                        # gradient * ( x - x0 ) = y - y0
-                        expr_p1 = self.aux_flow[line, t, k, point] - \
-                                  gradient[point] * (self.aux_weymouth_left[line, t, k, point] - point_x[point]) + \
-                                  point_y[point]
-                    for point in range(20):
-                        # (y-y2)/(y1-y2) = (x-x2)/(x1-x2)
-                        expr_p1 = (self.aux_weymouth_left[line, t, k, point] - point_x[point + 1]) / \
-                                  (point_x[point] - point_x[point + 1]) * \
-                                  (point_y[point] - point_y[point + 1]) + point_y[point + 1] - \
-                                  self.aux_flow[line, t, k, point]
-                    # add weymouth constraints
-
-                    # --- 线性化 end
-                    # 添加SOC
-                    self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], expr2 = \
-                        Complementary_soc(
-                            [1, sqrt(self.gas_weymouth[line])],
-                            [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
-                            [sqrt(self.gas_weymouth[line])],
-                            [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
-                            self.model,
-                            'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    Complementary_equal(cons_expr1, self.model, name1)
+                    # SOC 约束
+                    Complementary_soc(
+                        [1, sqrt(self.gas_weymouth[line])],
+                        [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
+                        [sqrt(self.gas_weymouth[line])],
+                        [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
+                        self.model,
+                        'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
         self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
     # Weymouth 方程的小于 部分
     # noinspection PyArgumentList
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
-        return
         self.objection_aux_update = []
+        # 上次迭代的 变量 及 约束
         self.model.remove(self.old_vars_constraints)
         self.old_vars_constraints = []
-        dual_expr = []
+
         for k in range(K):
-            aux_update_k = []
             for line in self.gas_inactive_line:
                 for t in range(T):
+                    # 构造 系数
                     k1 = self.gas_weymouth[line]
                     k2 = flow_in_old[line, t, k] + flow_out_old[line, t, k]
                     k3 = (flow_in_old[line, t, k] + flow_out_old[line, t, k])**2 / 4
@@ -956,26 +855,21 @@ class OneLayer:
                                   self.gas_node_pressure[self.gas_pipe_end_node[line], t, k],
                                   self.pccp_relax[line, t, k]
                                   ])
+                    # 构造 辅助变量
                     cons_expr1 = self.aux_weymouth_right_1[line, t, k] - sum(q*x) - r - 1
                     cons_expr2 = self.aux_weymouth_right_2[line, t, k] - sum(q*x) - r + 1
                     name1 = 'weymouth_relax_right_auxiliary1_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'weymouth_relax_right_auxiliary2_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    dual_vars1, constr1, expr1 = Complementary_equal_plus(cons_expr1, self.model, name1)
-                    dual_vars2, constr2, expr2 = Complementary_equal_plus(cons_expr2, self.model, name2)
-                    dual_left, dual_right, constr_original, constr_dual, expr3 = Complementary_soc_plus(
+                    Complementary_equal_plus(cons_expr1, self.model, name1)
+                    Complementary_equal_plus(cons_expr2, self.model, name2)
+                    # 添加 SOC 约束
+                    Complementary_soc_plus(
                         [2 * d, 1],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k], self.aux_weymouth_right_1[line, t, k]],
                         [1],
                         [self.aux_weymouth_right_2[line, t, k]],
                         self.model,
                         'weymouth_relax_right_soc' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-                    self.old_vars_constraints.extend([dual_vars1, dual_vars2, dual_left, dual_right])
-                    self.old_vars_constraints.extend([constr1, constr2, constr_original, constr_dual])
-                    dual_expr.extend([expr1, expr2, expr3])
-                    aux_update_k.append((-1 * r[0] - 1) * dual_vars1)
-                    aux_update_k.append((-1 * r[0] + 1) * dual_vars1)
-            self.objection_aux_update.append(sum(aux_update_k))
-        self.dual_expression_additional = sum(dual_expr)
         self.model.update()
 
     # 构建 下层 的目标函数
@@ -1004,10 +898,7 @@ class OneLayer:
                     lower_objs.append(
                         self.chp_lower_coeff_const[chp] +
                         self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, time, k] +
-                        # self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, time, k] * self.lower_chp_power_output[chp, time, k] +
                         self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, time, k])
-                        # self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, time, k] * self.lower_chp_heat_output[chp, time, k] +
-                        # self.chp_lower_coeff_cross[chp] * self.lower_chp_power_output[chp, time, k] * self.lower_chp_heat_output[chp, time, k])
         # 上层 well 的报价成本
         for well in range(self.well_upper_num):
             for time in range(T):

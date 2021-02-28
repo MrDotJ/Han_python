@@ -56,20 +56,14 @@ class MyExpr:
 
 def Complementary_great(expr, model, dual_var_name):  # expr should be greater than zero
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
-    var_dual = model.addVar(name=dual_var_name)
-    var_bin = model.addVar(vtype=gurobi.GRB.BINARY, name=dual_var_name + "_binary")
-    model.addConstr(expr >= 0, name='original_feasible_' + dual_var_name)
-    model.addConstr(expr <= M * var_bin, name='original_feasible_M_' + dual_var_name)
-    model.addConstr(var_dual >= 0, name='dual_feasible_' + dual_var_name)
-    model.addConstr(var_dual <= M * (1 - var_bin), name='dual_feasible_M_' + dual_var_name)
-    return var_dual, -1 * expr * var_dual
+    cons = model.addConstr(expr >= 0, name='original_feasible_' + dual_var_name)
+    return cons
 
 
 def Complementary_equal(expr, model, dual_var_name):
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
-    var_dual = model.addVar(lb=-1 * INFINITY, ub=INFINITY, name='dual_' + dual_var_name)
-    model.addConstr(-1 * expr == 0, name=dual_var_name + '[EqualFeasible]')
-    return var_dual, -1 * expr * var_dual
+    cons = model.addConstr(-1 * expr == 0, name=dual_var_name + '[EqualFeasible]')
+    return cons
 
 
 def Complementary_equal_plus(expr, model, dual_var_name):
@@ -82,54 +76,24 @@ def Complementary_equal_plus(expr, model, dual_var_name):
 def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_var_name):
     left_var_length = len(left_coeff)
     right_var_length = len(right_coeff)
-    dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
-                              name=dual_var_name + '_dual_left')
-    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
-                               name=dual_var_name + '_dual_right')
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
                                  for i in range(left_var_length)])
     expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * right_var[i] * right_var[i]
                                   for i in range(right_var_length)])
-    model.addConstr(lhs=expr_left, sense=gurobi.GRB.LESS_EQUAL, rhs=expr_right, name=dual_var_name + '[Original]')
-    dual_expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * dual_left[i] * dual_left[i]
-                                      for i in range(left_var_length)])
-    dual_expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * dual_right[i] * dual_right[i]
-                                       for i in range(right_var_length)])
-    model.addConstr(lhs=dual_expr_left, sense=gurobi.GRB.LESS_EQUAL, rhs=dual_expr_right, name=dual_var_name + '[Dual]')
-
-    lagrange_sum = gurobi.quicksum([left_coeff[i] * left_var[i] * dual_left[i] for i in range(left_var_length)]) + \
-                   gurobi.quicksum([right_coeff[i] * right_var[i] * dual_right[i] for i in range(right_var_length)])
-    # model.addConstr(lagrange_sum >= 0, name=dual_var_name + '[Lagrange]')
-    # model.addConstr(lagrange_sum <= 1000, name=dual_var_name + '[Lagrange1]')
-
-    return dual_left, dual_right, -1 * lagrange_sum
+    cons = model.addConstr(lhs=expr_left, sense=gurobi.GRB.LESS_EQUAL, rhs=expr_right, name=dual_var_name + '[Original]')
+    return cons
 
 
 def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, dual_var_name):
     left_var_length = len(left_coeff)
     right_var_length = len(right_coeff)
-    dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
-                              name=dual_var_name + '_dual_left')
-    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
-                               name=dual_var_name + '_dual_right')
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
                                  for i in range(left_var_length)])
     expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * right_var[i] * right_var[i]
                                   for i in range(right_var_length)])
-    constr_original = model.addConstr(expr_left <= expr_right, name=dual_var_name + '[Original]')
+    cons = model.addConstr(expr_left <= expr_right, name=dual_var_name + '[Original]')
 
-    dual_expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * dual_left[i] * dual_left[i]
-                                      for i in range(left_var_length)])
-    dual_expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * dual_right[i] * dual_right[i]
-                                       for i in range(right_var_length)])
-    constr_dual = model.addConstr(dual_expr_left <= dual_expr_right, name=dual_var_name + '[Dual]')
-
-    lagrange_sum = gurobi.quicksum([left_coeff[i] * left_var[i] * dual_left[i] for i in range(left_var_length)]) + \
-                   gurobi.quicksum([right_coeff[i] * right_var[i] * dual_right[i] for i in range(right_var_length)])
-    # model.addConstr(lagrange_sum <= 0, name=dual_var_name + '[Lagrange]')
-    # model.addConstr(lagrange_sum >= -1000, name=dual_var_name + '[Lagrange1]')
-
-    return dual_left, dual_right, constr_original, constr_dual, -1*lagrange_sum
+    return cons
 
 
 def tonp(vars_gur) -> np.array:

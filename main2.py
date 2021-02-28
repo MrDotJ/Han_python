@@ -2,7 +2,7 @@ from typing import List
 
 from numpy.core._multiarray_umath import ndarray
 
-from model_with_gas_new import OneLayer
+from first_stage_heat_gas import OneLayer
 from second_stage import SecondLayer
 from config3_with_gas import get_config, empirical_distribution, confidence_level
 import numpy as np
@@ -31,7 +31,7 @@ def do_main():
     distribution = empirical_distribution
     alpha = 0.6
 
-    linearization_point: List[ndarray] = [np.ones((3, 1, 1)), np.ones((3, 1, 1)), np.ones((3, 1, 1)), np.ones((3, 1, 1))]
+    linearization_point: List[ndarray] = [np.ones((5, 1, 1)), np.ones((5, 1, 1)), np.ones((5, 1, 1)), np.ones((5, 1, 1))]
     obj_k = 'suppress a warning'
     PUNISH = 2
 
