@@ -1,6 +1,8 @@
 from resource.utility import *
 from resource.config3_with_gas import T, K
 from math import sqrt
+from resource.config3_with_gas import get_config
+Linear_POINTS = 10
 
 
 class OneLayer:
@@ -100,6 +102,10 @@ class OneLayer:
         self.equivalent_revenue                             = 0
         self.old_vars_constraints                           = []
         self.objection_aux_update                           = []
+        self.pressure_continue                              = []
+        self.pressure_binary                                = []
+        self.flow_continue                                  = []
+        self.flow_binary                                    = []
 
 
     def build_gas_system(self):
@@ -180,8 +186,7 @@ class OneLayer:
                         sum(self.gas_flow_in[            np.where(self.gas_pipe_start_node            == node), t, k].flatten()) -   \
                         sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten())
                     name1 = 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k)
-                    self.dual_node_gas_balance[node, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    self.model.addConstr(cons_expr1 == 0, name=name1)
         # # ==================================== gas linepack ==================================
         # 气管网 的 linepack 与 气压 / 时间的关系 0 - T-2
         for line in self.gas_inactive_line:
@@ -194,10 +199,8 @@ class OneLayer:
                                  self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
                     name1 = 'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_linepack_with_pressure[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    self.dual_linepack_with_time[line, t, k], expr2 = Complementary_equal(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    self.model.addConstr(cons_expr1 == 0, name=name1)
+                    self.model.addConstr(cons_expr2 == 0, name=name2)
         # 气管网 的 linepack 与 气压/时间 的关系 T-1
         for line in self.gas_inactive_line:
             for t in [T-1]:
@@ -209,10 +212,8 @@ class OneLayer:
                                  self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
                     name1 = 'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_linepack_with_pressure[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    self.dual_linepack_with_time[line, t, k], expr2 = Complementary_equal(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    self.model.addConstr(cons_expr1 == 0, name=name1)
+                    self.model.addConstr(cons_expr2 == 0, name=name2)
         # # ======================================== active line ===================================
         # active 线路 的气损耗
         for line in self.gas_active_line:
@@ -220,17 +221,16 @@ class OneLayer:
                 for k in range(K):
                     cons_expr1 = self.gas_flow_out[line, t, k] - 0.97 * self.gas_flow_in[line, t, k]
                     name1 = 'dual_gas_flow_active_line_' + str(line) + '_time_' + str(t) + '_scenario_' + str(k)
-                    self.dual_compressor_consume[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    self.model.addConstr(cons_expr1 == 0, name=name1)
         # active 线路 气压变化
         for compressor, line in enumerate(self.gas_active_line):
             for t in range(T):
                 for k in range(K):
-                    cons_expr1 = self.gas_compressor_coeff[compressor] * self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] - \
+                    cons_expr1 = self.gas_compressor_coeff[compressor] * \
+                                 self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] - \
                                  self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]
                     name1 = 'dual_compressor_pressure_' + str(compressor) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_compressor_pressure_up[compressor, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    dual_expr.append(expr1)
+                    self.model.addConstr(cons_expr1 >= 0, name=name1)
         # # ======================================= gas well =========================================
         # 上层 气井 的 出力范围
         for well in range(self.well_upper_num):
@@ -240,10 +240,8 @@ class OneLayer:
                     cons_expr2 = -1 * self.upper_gas_well_output[well, t, k] + self.well_upper_output_max[well]
                     name1 = 'dual_upper_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_upper_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_well_upper_output_min[well, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_well_upper_output_max[well, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    self.model.addConstr(cons_expr1 >= 0, name=name1)
+                    self.model.addConstr(cons_expr2 >= 0, name=name2)
         # 下层 气井 的 出力范围
         for well in range(self.well_lower_num):
             for t in range(T):
@@ -252,10 +250,8 @@ class OneLayer:
                     cons_expr2 = -1 * self.lower_gas_well_output[well, t, k] + self.well_lower_output_max[well]
                     name1 = 'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_well_lower_output_min[well, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_well_lower_output_max[well, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    self.model.addConstr(cons_expr1 >= 0, name=name1)
+                    self.model.addConstr(cons_expr2 >= 0, name=name2)
         # # ==================================== gas node ===============================================
         # 节点 气压 上下限
         for node in range(self.gas_node_num):
@@ -265,10 +261,8 @@ class OneLayer:
                     cons_expr2 = self.gas_node_pressure_max[node] - self.gas_node_pressure[node, t, k]
                     name1 = 'dual_node_pressure_min_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k)
                     name2 = 'dual_node_pressure_max_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_gas_node_pressure_min[node, t, k], expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_gas_node_pressure_max[node, t, k], expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
+                    self.model.addConstr(cons_expr1 >= 0, name=name1)
+                    self.model.addConstr(cons_expr2 >= 0, name=name2)
         # # ==================================== gas flow ==================================================
         # 管道流量 上下限
         for line in range(self.gas_line_num):
@@ -282,64 +276,73 @@ class OneLayer:
                     name2 = 'dual_gas_flow_in_max'  + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name3 = 'dual_gas_flow_out_min' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     name4 = 'dual_gas_flow_out_max' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
-                    self.dual_gas_flow_in_min[line, t, k],  expr1 = Complementary_great(cons_expr1, self.model, name1)
-                    self.dual_gas_flow_in_max[line, t, k],  expr2 = Complementary_great(cons_expr2, self.model, name2)
-                    self.dual_gas_flow_out_min[line, t, k], expr3 = Complementary_great(cons_expr3, self.model, name3)
-                    self.dual_gas_flow_out_max[line, t, k], expr4 = Complementary_great(cons_expr4, self.model, name4)
-                    dual_expr.append(expr1)
-                    dual_expr.append(expr2)
-                    dual_expr.append(expr3)
-                    dual_expr.append(expr4)
-
-        Linear_POINTS = 10
-
+                    self.model.addConstr(cons_expr1 >= 0, name=name1)
+                    self.model.addConstr(cons_expr2 >= 0, name=name2)
+                    self.model.addConstr(cons_expr3 >= 0, name=name3)
+                    self.model.addConstr(cons_expr4 >= 0, name=name4)
+        # # ==================================== pressure^2 aux ===========================================
         for node in range(self.gas_node_num):
             for t in range(T):
                 for k in range(K):
-                    x_point = np.array([0, 1, 2, 3, 4,  5,  6,  7,  8,  9])
-                    y_point = np.array([0, 1, 4, 9, 16, 25, 36, 49, 64, 81])
-                    x_continue = tonp(self.model.addVars(10))
-                    self.model.addConstr(x_continue * x_point == self.gas_node_pressure[node, t, k])
-                    self.model.addConstr(sum(x_continue) == 1)
-                    self.model.addConstr(x_continue * y_point == self.gas_node_pressure_aux[node, t, k])
-                    x_binary = tonp(self.model.addVars(10, vtype=gurobi.GRB.BINARY))
+                    x_point = np.linspace(0, 10, Linear_POINTS)
+                    y_point = x_point**2
+                    x_continue = tonp(self.model.addVars(Linear_POINTS))
+                    self.pressure_continue.append(x_continue)
+                    # continue constraints
+                    cons_expr1 = x_continue.dot(x_point) - self.gas_node_pressure[node, t, k]
+                    cons_expr2 = sum(x_continue) - 1
+                    cons_expr3 = x_continue.dot(y_point) - self.gas_node_pressure_aux[node, t, k]
+                    self.model.addConstr(cons_expr1 == 0)
+                    self.model.addConstr(cons_expr2 == 0)
+                    self.model.addConstr(cons_expr3 == 0)
+
+                    x_binary = tonp(self.model.addVars(Linear_POINTS, vtype=gurobi.GRB.BINARY))
+                    self.pressure_binary.append(x_binary)
+                    # binary constraints
                     for point in range(Linear_POINTS):
                         self.model.addConstr(x_continue[point] <= x_binary[point])
-                    for point in range(Linear_POINTS):
-                        point2 = point + 2
-                        if point2 < Linear_POINTS:
-                            self.model.addConstr(x_binary[point] + x_binary[point2] <= 1)
-
+                    self.model.addConstr(gurobi.quicksum(x_binary) <= 2)
+                    for point1 in range(Linear_POINTS):  # [0 1 2 3 4]  1
+                        for point2 in range(point1, Linear_POINTS): # [ 1 2 3 4]
+                            if (point2 - point1) >= 2:
+                                self.model.addConstr(x_binary[point1] + x_binary[point2] <= 1)
+        # # ==================================== (flow_in + flow_out)^2 aux ==============================
         for line in range(self.gas_line_num):
             for t in range(T):
                 for k in range(K):
-                    x_point = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-                    y_point = np.array([0, 1, 4, 9, 16, 25, 36, 49, 64, 81])
-                    x_continue = tonp(self.model.addVars(10))
-                    self.model.addConstr(x_continue * x_point == (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]))
-                    self.model.addConstr(sum(x_continue) == 1)
-                    self.model.addConstr(x_continue * y_point == self.gas_flow_aux[line, t, k])
-                    x_binary = tonp(self.model.addVars(10, vtype=gurobi.GRB.BINARY))
+                    x_point = np.linspace(0, 10, Linear_POINTS)
+                    y_point = x_point**2
+                    x_continue = tonp(self.model.addVars(Linear_POINTS))
+                    self.flow_continue.append(x_continue)
+                    # continue constraints
+                    cons_expr1 = x_continue.dot(x_point) - (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k])
+                    cons_expr2 = sum(x_continue) - 1
+                    cons_expr3 = x_continue.dot(y_point) - self.gas_flow_aux[line, t, k]
+                    self.model.addConstr(cons_expr1 == 0)
+                    self.model.addConstr(cons_expr2 == 0)
+                    self.model.addConstr(cons_expr3 == 0)
+
+                    x_binary = tonp(self.model.addVars(Linear_POINTS, vtype=gurobi.GRB.BINARY))
+                    self.flow_binary.append(x_binary)
+                    # binary constraints
                     for point in range(Linear_POINTS):
                         self.model.addConstr(x_continue[point] <= x_binary[point])
-                    for point in range(Linear_POINTS):
-                        point2 = point + 2
-                        if point2 < Linear_POINTS:
-                            self.model.addConstr(x_binary[point] + x_binary[point2] <= 1)
-
+                    self.model.addConstr(gurobi.quicksum(x_binary) <= 2)
+                    for point1 in range(Linear_POINTS):  # [0 1 2 3 4]  1
+                        for point2 in range(point1, Linear_POINTS): # [ 1 2 3 4]
+                            if (point2 - point1) >= 2:
+                                self.model.addConstr(x_binary[point1] + x_binary[point2] <= 1)
+        # # ==================================== Weymouth ==================================================
         for line in range(self.gas_line_num):
             for t in range(T):
                 for k in range(K):
                     start_node = self.gas_pipe_start_node[line]
                     end_node = self.gas_pipe_end_node[line]
                     self.model.addConstr(
-                        lhs=self.gas_node_pressure_aux[start_node] - self.gas_node_pressure_aux[end_node],
-                        rhs=self.gas_flow_aux[line, t, k],
-                        sense=gurobi.GRB.EQUAL,
+                        self.gas_node_pressure_aux[start_node, t, k] - self.gas_node_pressure_aux[end_node, t, k] ==
+                        self.gas_flow_aux[line, t, k],
                         name='Weymouth'+str(line) + str(t) + str(k))
 
-                    # --- 线性化 end
-        self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
 
     # 构建 下层 的目标函数
     def build_lower_objective(self):
@@ -581,61 +584,39 @@ class OneLayer:
         self.equivalent_cost = obj_k_p
         self.equivalent_revenue = obj_k_h
 
-    def optimize(self, distribution):
+    def optimize(self):
         self.model.setParam("IntegralityFocus", 1)
-        self.model.setParam("NonConvex", 2)
+        # self.model.setParam("NonConvex", 2)
         # self.model.setParam("OutputFlag", 0)
 
-        self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
-        # self.model.setObjective((np.array(self.obj_k) + np.array(self.objection_aux_update)).dot(np.array(distribution)))
+        self.model.setObjective(0)
         self.model.optimize()
 
-        expected_cost = []
-        for chp in range(self.chp_upper_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[0, t, k])
-                    expected_cost.append(self.upper_chp_power_output[chp, t, k] *
-                                         self.dual_node_power_balance[self.chp_upper_connection_power_index[chp], t, k])
-        for gen in range(self.generator_upper_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(self.upper_generator_power_output[gen, t, k] *
-                                         self.dual_node_power_balance[self.generator_upper_connection_index[gen], t, k])
-
-        self.expected_revenue = sum(expected_cost)
-
-        weymouth_left = []
-        weymouth_right = []
-        for line in range(self.gas_line_num):
-            for t in range(T):
-                for k in range(K):
-                    weymouth_left.append(self.gas_weymouth[line] *
-                                         ((self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] *
-                                           self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] -
-                                           self.gas_node_pressure[self.gas_pipe_end_node[line], t, k] *
-                                           self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]).getValue()))
-                    weymouth_right.append(((self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) *
-                                           (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k])).getValue() / 4)
 
 
-        value_generator_quoted_price = to_value(self.upper_generator_quoted_price_tuple_dict)
-        value_chp_power_quoted_price = to_value(self.upper_chp_power_quoted_price_tuple_dict)
-        value_chp_heat_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
+def fff():
+    # fx + gy + hz
+    # upper constraints
+    # all lower constraints
+    # ===>new lower variables          -| A
+    # ===>lower objective great         | D
+    # ===>KKT equivalent constraints   -| D
+    mo.build_upper_and_lower_variables()
+    mo.set_upper_objective()
+    mo.build_upper_constraints()
+    mo.build_lower_constraints()
+    lower_bound = mo.optimize()
+    mo.build_subproblem1()
+    obj1 = mo.optimize_subproblem1()
+    lower_bound = mo.build_subproblem2(obj1)
+    mo.update_new_lower_KKT_equivalent_constraints()
+    a = 0
+    return a
 
-        obj_k = np.array([obj.getValue() * -1 for obj in self.obj_k])              # change to profile
 
-        linearization_point = [
-            to_value_np(self.gas_node_pressure[self.gas_pipe_start_node]),
-            to_value_np(self.gas_node_pressure[self.gas_pipe_end_node]),
-            to_value_np(self.gas_flow_in),
-            to_value_np(self.gas_flow_out)]
-
-        pccp = to_value_np(self.pccp_relax)
-
-        return [value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price], \
-               obj_k, \
-               linearization_point, \
-               pccp, \
-               np.array(weymouth_left), \
-               np.array(weymouth_right)
+if __name__ == '__main__':
+    power_system, heat_system, chp_system, gas_system = get_config()
+    model = OneLayer(power_system, heat_system, chp_system, gas_system)
+    model.build_gas_system()
+    model.build_gas_system_original_and_dual_constrains()
+    model.optimize()
