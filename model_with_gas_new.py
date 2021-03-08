@@ -884,40 +884,6 @@ class OneLayer:
                     cons_expr1 = self.aux_weymouth_left[line, t, k] - (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2
                     name1 = 'weymouth_relax_left_auxiliary_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k)
                     self.dual_weymouth_aux_left[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, name1)
-                    # --- 线性化 start
-                    # aux_pressure —— (pressure)^2
-                    point_x = np.linspace(PRESSURE_START, PRESSURE_END, SPLIT_POINT)
-                    point_y = point_x ** 2
-                    gradient = 2 * point_x
-                    for point in range(20):
-                        # gradient * ( x - x0 ) = y - y0
-                        expr_p1 = self.aux_pressure[line, t, k, point] - \
-                                  gradient[point] * (self.gas_node_pressure[line, t, k, point] - point_x[point]) + \
-                                  point_y[point]
-                    for point in range(20):
-                        # (y-y2)/(y1-y2) = (x-x2)/(x1-x2)
-                        expr_p1 = (self.gas_node_pressure[line, t, k, point] - point_x[point + 1]) / \
-                                  (point_x[point] - point_x[point + 1]) * \
-                                  (point_y[point] - point_y[point + 1]) + point_y[point + 1] - \
-                                  self.aux_pressure[line, t, k, point]
-                    # aux_flow —— (aux_weymouth_left)^2  akg: (flow_in + flow_out)^2
-                    point_x = [1]
-                    point_y = [1]
-                    gradient = [1]
-                    for point in range(20):
-                        # gradient * ( x - x0 ) = y - y0
-                        expr_p1 = self.aux_flow[line, t, k, point] - \
-                                  gradient[point] * (self.aux_weymouth_left[line, t, k, point] - point_x[point]) + \
-                                  point_y[point]
-                    for point in range(20):
-                        # (y-y2)/(y1-y2) = (x-x2)/(x1-x2)
-                        expr_p1 = (self.aux_weymouth_left[line, t, k, point] - point_x[point + 1]) / \
-                                  (point_x[point] - point_x[point + 1]) * \
-                                  (point_y[point] - point_y[point + 1]) + point_y[point + 1] - \
-                                  self.aux_flow[line, t, k, point]
-                    # add weymouth constraints
-
-                    # --- 线性化 end
                     # 添加SOC
                     self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], expr2 = \
                         Complementary_soc(

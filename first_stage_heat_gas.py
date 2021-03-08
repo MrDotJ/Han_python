@@ -600,6 +600,7 @@ class OneLayer:
                     self.dual_pccp_relax_great_zero[line, t, k], expr1 = \
                         Complementary_great(cons_expr1, self.model, 'dual_pccp_relax_great_zero' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_expr.append(expr1)
+
         self.douvar = []
         for line in self.gas_inactive_line:
             for t in range(T):
@@ -620,7 +621,6 @@ class OneLayer:
 
     # 每次迭代， 更新 PCCP 部分
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
-        # return
         self.objection_aux_update = []
         self.model.remove(self.old_vars_constraints)
         self.old_vars_constraints = []
@@ -643,17 +643,21 @@ class OneLayer:
                                   self.gas_node_pressure[self.gas_pipe_end_node[line], t, k],
                                   self.pccp_relax[line, t, k]
                                   ])
+                    # 两个辅助 变量
                     cons_expr1 = self.aux_weymouth_right_1[line, t, k] - sum(q*x) - r - 1
                     cons_expr2 = self.aux_weymouth_right_2[line, t, k] - sum(q*x) - r + 1
                     dual_vars1, constr1, expr1 = Complementary_equal_plus(cons_expr1, self.model, 'weymouth_relax_right_auxiliary1_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_vars2, constr2, expr2 = Complementary_equal_plus(cons_expr2, self.model, 'weymouth_relax_right_auxiliary2_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-                    dual_left, dual_right, constr_original, constr_dual, expr3 = Complementary_soc_plus(
+                    # 构建SOC 约束
+                    # 左对偶变量, 右对偶变量,  原SOC约束,      对偶SOC约束,      互补为零约束,     lagrange项
+                    dual_left, dual_right, constr_original, constr_dual, complementary_constr, expr3 = Complementary_soc_plus(
                         [2 * d, 1],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k], self.aux_weymouth_right_1[line, t, k]],
                         [1],
                         [self.aux_weymouth_right_2[line, t, k]],
                         self.model,
                         'weymouth_relax_right_soc' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    # 追加旧的变量及约束
                     self.old_vars_constraints.extend([dual_vars1, dual_vars2, dual_left, dual_right])
                     self.old_vars_constraints.extend([constr1, constr2, constr_original, constr_dual])
                     dual_expr.extend([expr1, expr2, expr3])
@@ -865,7 +869,7 @@ class OneLayer:
         self.model.setParam("NonConvex", 2)
         # self.model.setParam("OutputFlag", 0)
 
-        self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
+        # self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         # self.model.setObjective((np.array(self.obj_k) + np.array(self.objection_aux_update)).dot(np.array(distribution)))
         self.model.optimize()
 

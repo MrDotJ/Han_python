@@ -224,7 +224,7 @@ def to_value(vars_gur):
         return re
 
 
-def to_value_np(vars_np):
+def to_value_np(vars_np: np.ndarray) -> np.ndarray:
     re = np.ones(vars_np.shape)
     shape = vars_np.shape
     dim = vars_np.ndim
@@ -258,3 +258,15 @@ def to_value_np(vars_np):
                         for n in range(shape[4]):
                             re[i, j, k, m, n] = vars_np[i, j, k, m, n].getAttr('X')
         return re
+
+
+def SetBinaryToCorrespondValue(var: np.ndarray, value: np.ndarray, model: gurobi.Model):
+    shape = var.shape
+    dim = var.ndim
+    if dim == 1:
+        for i in range(shape[0]):
+            model.addConstr(var[i] == value[i])
+    if dim == 2:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                model.addConstr(var[i, j] == value[i, j])
