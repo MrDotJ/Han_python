@@ -136,7 +136,7 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     complementary_constr = model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
     # model.addConstr(lagrange_sum >= -1000, name=dual_var_name + '[Lagrange1]')
 
-    return dual_left, dual_right, constr_original, constr_dual, complementary_constr, -1 * lagrange_sum
+    return dual_left, dual_right, constr_original, constr_dual, complementary_constr , -1 * lagrange_sum
 
 
 # this is just original constraints for test START

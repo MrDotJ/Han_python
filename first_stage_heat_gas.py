@@ -402,6 +402,7 @@ class OneLayer:
                         (self.heat_node_tempe_supply[self.heater_connection_index[heater], t, k] -
                          self.heat_node_tempe_return[self.heater_connection_index[heater], t, k])
                     self.dual_heater_balance[heater, t, k], expr1 = Complementary_equal(1 * cons_expr1, self.model, 'dual_heater_balance' + str(t) + '_' + str(heater) + 'scenario' + str(k))
+                    self.model.addConstr(self.dual_heater_balance[heater, t, k] <= 30)
                     dual_expr.append(expr1)
 
         for exchanger in range(self.heat_exchanger_num):
@@ -412,6 +413,7 @@ class OneLayer:
                                  (self.heat_node_tempe_supply[self.exchanger_connection_index[exchanger], t, k] -
                                   self.heat_node_tempe_return[self.exchanger_connection_index[exchanger], t, k])
                     self.dual_exchanger_balance[exchanger, t, k], expr1 = Complementary_equal(-1*cons_expr1, self.model, 'dual_exchanger_balance' + str(t) + '_' + str(exchanger) + str(k))
+                    self.model.addConstr(self.dual_exchanger_balance[exchanger, t, k] <= 30)
                     dual_expr.append(expr1)
 
         for line in range(self.heat_pipe_num):
@@ -443,8 +445,8 @@ class OneLayer:
         for line in range(self.heat_pipe_num):
             for t in range(T):
                 for k in range(K):
-                    cons_expr1 = self.heat_pipe_end_tempe_supply[line, t, k] - ((1 - 0.0001 * (self.heat_pipe_length[line] * 1) / 1000) * self.heat_pipe_start_tempe_supply[line, t, k])
-                    cons_expr2 = self.heat_pipe_end_tempe_return[line, t, k] - ((1 - 0.0001 * (self.heat_pipe_length[line] * 1) / 1000) * self.heat_pipe_start_tempe_return[line, t, k])
+                    cons_expr1 = self.heat_pipe_end_tempe_supply[line, t, k] - ((1 - 0.000 * (self.heat_pipe_length[line] * 1) / 1000) * self.heat_pipe_start_tempe_supply[line, t, k])
+                    cons_expr2 = self.heat_pipe_end_tempe_return[line, t, k] - ((1 - 0.000 * (self.heat_pipe_length[line] * 1) / 1000) * self.heat_pipe_start_tempe_return[line, t, k])
                     _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_heat_loss_supply' + str(t) + '_' + str(line) + 'scenario' + str(k))
                     _, expr2 = Complementary_equal(cons_expr2, self.model, 'dual_heat_loss_return' + str(t) + '_' + str(line) + 'scenario' + str(k))
                     dual_expr.append(expr1)
@@ -501,6 +503,7 @@ class OneLayer:
                         sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
                             self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
                     self.dual_node_gas_balance[node, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k))
+                    self.model.addConstr(self.dual_node_gas_balance[node, t, k] <= 5)
                     dual_expr.append(expr1)
 
         for line in self.gas_inactive_line:
@@ -605,7 +608,7 @@ class OneLayer:
         for line in self.gas_inactive_line:
             for t in range(T):
                 for k in range(K):
-                    cons_expr1 = self.aux_weymouth_left[line, t, k] - (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2
+                    cons_expr1 = self.aux_weymouth_left[line, t, k] - ((self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2)
                     self.dual_weymouth_aux_left[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'weymouth_relax_left_auxiliary_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], expr2 = Complementary_soc(
                         [1, sqrt(self.gas_weymouth[line])],
@@ -869,7 +872,7 @@ class OneLayer:
         self.model.setParam("NonConvex", 2)
         # self.model.setParam("OutputFlag", 0)
 
-        # self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
+        self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         # self.model.setObjective((np.array(self.obj_k) + np.array(self.objection_aux_update)).dot(np.array(distribution)))
         self.model.optimize()
 

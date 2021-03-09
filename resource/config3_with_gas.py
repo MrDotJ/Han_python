@@ -113,43 +113,226 @@ def get_config():
 
 
 
+    # upper_chp_info = np.array([
+    #     # a0           a1            a2             a3            a4               a5              heater     bid_power      bid_heat
+    #     [
+    #       20 * 0.6,    0 * 0.06,   15. * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10],
+    #     [
+    #       20 * 0.6,    0 * 0.06,   15. * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10]
+    # ])
+    #
+    # lower_chp_info = np.array([
+    #     [
+    #        2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+    #     ],
+    #     [
+    #        2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+    #     ],
+    # ])
+    #
+    # upper_chp_POWER = np.array([
+    #     [0.81 * 0,     2.97 * 0,    2.55 * 0,       0],
+    #     [0.81 * 0,     2.97 * 0,    2.55 * 0,       0]
+    # ]) * 1
+    #
+    # upper_chp_HEAT = np.array([
+    #     [0.528,     0.8,       0.45,     0],
+    #     [0.528,     0.8,       0.45,     0]
+    # ]) * 1
+    #
+    # lower_chp_POWER = np.array([
+    #     [0.247 * 0 ,     0.215 * 0,   0.081 * 0,    0.0],
+    #     [0.247 * 0 ,     0.215 * 0,   0.081 * 0,    0.0]
+    # ]) * 1
+    #
+    # lower_chp_HEAT = np.array([
+    #     [0.3,         0.180,   1.048,    0],
+    #     [0.3,         0.180,   1.048,    0]
+    # ]) * 1
+    #
+    # heat_network_supply = np.array([
+    #     # Beginning node Terminal node length(m)    flow(kg / h)
+    #     [        0,              1,     3500,      1   ],
+    #     [        1,              2,     1750,      0.8 ],
+    #     [        2,              3,     1750,      0.4 ],
+    #     [        1,              4,     1750,      0.2 ],
+    #     [        2,              5,     750,       0.4 ],
+    # ])
+    # heat_network_return = np.array([
+    #     # Beginning node Terminal node length(m)    flow(kg / h)
+    #     [        1,              0,     3500,      1   ],
+    #     [        2,              1,     1750,      0.8 ],
+    #     [        3,              2,     1750,      0.4 ],
+    #     [        4,              1,     1750,      0.2 ],
+    #     [        5,              2,     750,       0.4 ],
+    # ])
+    # ##    0    10    1      8     2      4     3
+    # #     o----------o------------o------------o
+    # #                |         4  |
+    # #              2 |            |
+    # #             4  o         5  o
+    # ##
+    #
+    # heat_network_node = np.array([
+    # #   node      Tsmin       Tsmax       Trmin     Trmax
+    #     [0,        0 ,         100,        0,       100],
+    #     [1,        0,          100,        0,       100],
+    #     [2,        0,          100,        0,       100],
+    #     [3,        0,          100,        0,       100],
+    #     [4,        0,          100,        0,       100],
+    #     [5,        0,          100,        0,       100],
+    # ])
+    #
+    #
+    #
+    # #     Node     load demand(MW)
+    # exchanger_info = np.array([
+    #       [3,        1 / 3,   ],
+    #       [4,        1 / 3,   ],
+    #       [5,        1 / 3,   ],
+    # ])
+    #
+    # #  node    flow
+    # heater_info = np.array([
+    #     [0],
+    # ])
+    #
+    # heat_load = np.array([[
+    #     49,          50,          52,     47.8,     48,      49,      48.06451613,
+    #     47.09677419,
+    #     45.16129032, 44.19354839, 43.22580645, 42.25806452, 41.29032258, 41.29032258, 41.29032258, 42.25806452,
+    #     43.22580645, 44.19354839, 44.19354839, 44.19354839, 45.16129032, 46.12903226, 47.09677419, 47.09677419],
+    # ]) / 50
+    #
+    # upper_chp_power_index = np.array([
+    #     2, 2
+    # ])
+    #
+    # lower_chp_power_index = np.array([
+    #     3, 3
+    # ])
+
+    # ## 只有 上层 一个chp机组啊
+    # upper_chp_info = np.array([
+    #     # a0           a1            a2             a3            a4               a5              heater     bid_power      bid_heat
+    #     [
+    #       20 * 0.6,    0 * 0.06,   15. * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10
+    #     ]
+    # ])
+    #
+    # lower_chp_info = np.array([
+    #      [
+    #         2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+    #      ]
+    # ])
+    #
+    # upper_chp_POWER = np.array([
+    #     [0.81 * 0,     2.97 * 0,    2.55 * 0,       0]
+    # ])
+    #
+    # upper_chp_HEAT = np.array([
+    #     [0.528,     0.8,       0.45,     0],
+    # ])*3
+    #
+    # lower_chp_POWER = np.array([
+    #     [0, 0, 0, 0]
+    # ])
+    #
+    # lower_chp_HEAT = np.array([
+    #     [0, 0, 0, 0]
+    # ])
+    #
+    # heat_network_supply = np.array([
+    #     # Beginning node Terminal node length(m)    flow(kg / h)
+    #     [        0,              1,     3500,      1   ],
+    #     [        1,              2,     1750,      0.8 ],
+    #     [        2,              3,     1750,      0.4 ],
+    #     [        1,              4,     1750,      0.2 ],
+    #     [        2,              5,     750,       0.4 ],
+    # ])
+    # heat_network_return = np.array([
+    #     # Beginning node Terminal node length(m)    flow(kg / h)
+    #     [        1,              0,     3500,      1   ],
+    #     [        2,              1,     1750,      0.8 ],
+    #     [        3,              2,     1750,      0.4 ],
+    #     [        4,              1,     1750,      0.2 ],
+    #     [        5,              2,     750,       0.4 ],
+    # ])
+    # ##    0    10    1      8     2      4     3
+    # #     o----------o------------o------------o
+    # #                |         4  |
+    # #              2 |            |
+    # #             4  o         5  o
+    # ##
+    #
+    # heat_network_node = np.array([
+    # #   node      Tsmin       Tsmax       Trmin     Trmax
+    #     [0,        0 ,         100,        0,       100],
+    #     [1,        0,          100,        0,       100],
+    #     [2,        0,          100,        0,       100],
+    #     [3,        0,          100,        0,       100],
+    #     [4,        0,          100,        0,       100],
+    #     [5,        0,          100,        0,       100],
+    # ])
+    #
+    #
+    #
+    # #     Node     load demand(MW)
+    # exchanger_info = np.array([
+    #       [3,        1 / 3,   ],
+    #       [4,        1 / 3,   ],
+    #       [5,        1 / 3,   ],
+    # ])
+    #
+    # #  node    flow
+    # heater_info = np.array([
+    #     [0],
+    # ])
+    #
+    # heat_load = np.array([[
+    #     49,          50,          52,     47.8,     48,      49,      48.06451613,
+    #     47.09677419,
+    #     45.16129032, 44.19354839, 43.22580645, 42.25806452, 41.29032258, 41.29032258, 41.29032258, 42.25806452,
+    #     43.22580645, 44.19354839, 44.19354839, 44.19354839, 45.16129032, 46.12903226, 47.09677419, 47.09677419],
+    # ]) / 50
+    #
+    # upper_chp_power_index = np.array([
+    #     2
+    # ])
+    #
+    # lower_chp_power_index = np.array([
+    #     2
+    # ])
+
+    ## 只有 上层 一个chp机组啊
     upper_chp_info = np.array([
-        # node         Hmin(MW)      Hmax(MW)       efficiency    Gen              Cost($ / MW)    Tsmin         Tsmax
         # a0           a1            a2             a3            a4               a5              heater     bid_power      bid_heat
         [
-          20 * 0.6,    0 * 0.06,   15. * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10],
-        [
-          20 * 0.6,    0 * 0.06,   15. * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10]
+          20 * 0.6,    0 * 0.06,   1.5 * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10
+        ],
     ])
 
     lower_chp_info = np.array([
-        [
-           2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
-        ],
-        [
-           2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
-        ],
+         [
+            2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+         ],
     ])
 
     upper_chp_POWER = np.array([
         [0.81 * 0,     2.97 * 0,    2.55 * 0,       0],
-        [0.81 * 0,     2.97 * 0,    2.55 * 0,       0]
-    ]) * 1
+    ])
 
     upper_chp_HEAT = np.array([
         [0.528,     0.8,       0.45,     0],
-        [0.528,     0.8,       0.45,     0]
-    ]) * 1
+    ])*3
 
     lower_chp_POWER = np.array([
-        [0.247 * 0 ,     0.215 * 0,   0.081 * 0,    0.0],
-        [0.247 * 0 ,     0.215 * 0,   0.081 * 0,    0.0]
-    ]) * 1
+        [0, 0, 0, 0]
+    ])
 
     lower_chp_HEAT = np.array([
-        [0.3,         0.180,   1.048,    0],
-        [0.3,         0.180,   1.048,    0]
-    ]) * 1
+        [0.3, 0.2, 0.1, 0.0]
+    ])
 
     heat_network_supply = np.array([
         # Beginning node Terminal node length(m)    flow(kg / h)
@@ -206,13 +389,12 @@ def get_config():
     ]) / 50
 
     upper_chp_power_index = np.array([
-        2, 2
+        2
     ])
 
     lower_chp_power_index = np.array([
-        3, 3
+        2
     ])
-
     heat_system = {
         'node_num': len(heat_network_node),
         'pipe_num': len(heat_network_supply),
@@ -419,18 +601,18 @@ def get_config():
     # use config 6 - gas - node
     upper_well_info = np.array([
     #  node    max(Sm3/h)      min(Sm3/h)     cost($/Sm3)    quoted_max($/Sm3)
-        [5,       3.36,             0,            2.2,             4.4],
+        [5,       33.36,             0,            2.2,             4.4],
     ])
     lower_well_info = np.array([
-        [4,       3.36,             0,            2.8 ],
+        [4,       33.36,             0,            2.8 ],
     ])
     gas_pipe_line_info = np.array([
     #  start     end       weymouth     linepack   index   is_active   flow_min   flow_max
-        [5,       3,        0.193,       0.0271,     0,       0,           0,        2 ],
-        [4,       3,        0.193,       0.0271,     1,       0,           0,        2 ],
-        [3,       2,        0.193,       0.0271,     2,       0,           0,        2 ],
-        [2,       1,        0.193,       0.0271,     3,       0,           0,        2 ],
-        [1,       0,        0.193,       0.0271,     4,       0,           0,        2 ],
+        [5,       3,        0.193/0.193,       0.0,     0,       0,           0,        20 ],
+        [4,       3,        0.193/0.193,       0.0,     1,       0,           0,        20 ],
+        [3,       2,        0.193/0.193,       0.0,     2,       0,           0,        20 ],
+        [2,       1,        0.193/0.193,       0.0,     3,       0,           0,        20 ],
+        [1,       0,        0.193/0.193,       0.0,     4,       0,           0,        20 ],
     ])
 
     gas_node_info = np.array([
@@ -456,15 +638,15 @@ def get_config():
     gas_load_info = np.array([
     #   node     percent
         [0,      0.5],
-        [0,      0.2],
-        [0,      0.3],
+        [1,      0.2],
+        [1,      0.3],
     ])
 
     chp_upper_connection_gas_index = np.array(
-        [4, 4]
+        [4]
     )
     chp_lower_connection_gas_index = np.array(
-        [4, 4]
+        [5]
     )
 
 
