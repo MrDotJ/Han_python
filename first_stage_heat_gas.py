@@ -674,21 +674,33 @@ class OneLayer:
 
     # 构建下层市场的目标函数，用于kkt求导的目标函数部分
     def build_lower_objective(self):
+        # 市场 ： 整个社会成本最小
         lower_objs = []
+        # UPPER CHP 从上层买热 quoted price 买
         for chp in range(self.chp_upper_num):
             for time in range(T):
                 for k in range(K):
                     # lower_objs.append(self.upper_chp_power_output[chp, time, k] * self.upper_chp_power_quoted_price[chp, time])
                     lower_objs.append(self.upper_chp_heat_output[chp, time, k] * self.upper_chp_heat_quoted_price[chp, time])
-        for chp in range(self.chp_lower_num):
+        # UPPER CHP 的 买气 成本 ????? ！！！！！
+        for chp in range(self.chp_upper_num):
             for time in range(T):
                 for k in range(K):
-                    lower_objs.append(
-                        self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, time, k] )
+                    lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) * self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], time, k])
+
+        # ！！！！？？？？？
+        # Lower CHP : 耗气量 * 节点边际气价
+        # for chp in range(self.chp_lower_num):
+        #     for time in range(T):
+        #         for k in range(K):
+        #             lower_objs.append(
+        #                 self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, time, k] )
+
         for well in range(self.well_upper_num):
             for time in range(T):
                 for k in range(K):
                     lower_objs.append(self.upper_well_quoted_price[well, time] * self.upper_gas_well_output[well, time, k])
+
         for well in range(self.well_lower_num):
             for time in range(T):
                 for k in range(K):
@@ -730,18 +742,31 @@ class OneLayer:
                 )
 
     # 上层的目标函数， 这里 是 非线性的 直接 => 产量 * 边际价格 - 成本，    这里的一个问题是， chp的天然气 需要 按节点边际气价 付费吗？
-    def build_upper_objective(self):
+    def build_upper_objective(self):  #
         obj_k = []
         for k in range(K):
             expected_cost = []
+            # #  0L             1LL            2 CHP        3             4W(L)
+            #    o ------------ o ------------ o ---------- o ------------- o
+            #                                               |
+            #                                               |
+            #                                               o
+            # #                                             5W(U) CHP CHP
+
+
+
+            # chp 收益    节点边际热价 * 热输出 - chp 的成本       (const + p1 * power  + p3 * heat) * 节点边际气价      购气成本
             for chp in range(self.chp_upper_num):
                 for t in range(T):
                     expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[self.chp_upper_connection_heater_index[chp], t, k])
-                    expected_cost.append(-1 * self.upper_chp_heat_output[chp, t, k] * self.chp_upper_coeff_h_1[chp])
+                    # expected_cost.append(-1 * self.upper_chp_heat_output[chp, t, k] * self.chp_upper_coeff_h_1[chp])     # 写法1
+                    expected_cost.append((-1 * self.upper_chp_heat_output[chp, t, k] * self.chp_upper_coeff_h_1[chp]) * self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], t, k])    # 写法2
+            # well  气井的收益
             for well in range(self.well_upper_num):
                 for t in range(T):
                     expected_cost.append(self.upper_gas_well_output[well, t, k] * self.dual_node_gas_balance[self.well_upper_connection_index[well], t, k])
                     expected_cost.append(-1 * self.upper_gas_well_output[well, t, k] * self.well_upper_cost[well])
+
             obj_k.append(-1 * sum(expected_cost))
         self.obj_k = obj_k
 
