@@ -694,11 +694,11 @@ class OneLayer:
                     lower_objs.append(self.upper_chp_heat_output[chp, time, k] * self.upper_chp_heat_quoted_price[chp, time])
                     # lower_objs.append(self.upper_chp_heat_output[chp, time, k] * self.dual)
         # UPPER CHP 的 买气 成本 ????? ！！！！！
-        for chp in range(self.chp_upper_num):
-            for time in range(T):
-                for k in range(K):
-                    lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) *
-                                      self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], time, k])
+        # for chp in range(self.chp_upper_num):
+        #     for time in range(T):
+        #         for k in range(K):
+        #             lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) *
+        #                               self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], time, k])
         # 按照报价购买
         for chp in range(self.chp_upper_num):
             for time in range(T):
