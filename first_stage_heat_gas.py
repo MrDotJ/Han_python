@@ -604,26 +604,34 @@ class OneLayer:
                         Complementary_great(cons_expr1, self.model, 'dual_pccp_relax_great_zero' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_expr.append(expr1)
 
-        self.douvar = []
+        # self.douvar = []
+        # for line in self.gas_inactive_line:
+        #     for t in range(T):
+        #         for k in range(K):
+        #             cons_expr1 = self.aux_weymouth_left[line, t, k] - ((self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2)
+        #             self.dual_weymouth_aux_left[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'weymouth_relax_left_auxiliary_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+        #             self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], expr2 = Complementary_soc(
+        #                 [1, sqrt(self.gas_weymouth[line])],
+        #                 [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
+        #                 [sqrt(self.gas_weymouth[line])],
+        #                 [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
+        #                 self.model,
+        #                 'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+        #             dual_expr.append(expr1)
+        #             dual_expr.append(expr2)
+        #             self.douvar.append(expr2)
         for line in self.gas_inactive_line:
             for t in range(T):
                 for k in range(K):
-                    cons_expr1 = self.aux_weymouth_left[line, t, k] - ((self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2)
-                    self.dual_weymouth_aux_left[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'weymouth_relax_left_auxiliary_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-                    self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], expr2 = Complementary_soc(
-                        [1, sqrt(self.gas_weymouth[line])],
-                        [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
-                        [sqrt(self.gas_weymouth[line])],
-                        [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
-                        self.model,
-                        'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    cons_expr1 = self.gas_weymouth[line] * (self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] - self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]) - \
+                                 (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k])
+                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_weymouth_simplify' + str(line) + str(t) + str(k))
                     dual_expr.append(expr1)
-                    dual_expr.append(expr2)
-                    self.douvar.append(expr2)
         self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
 
     # 每次迭代， 更新 PCCP 部分
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
+        return
         self.objection_aux_update = []
         self.model.remove(self.old_vars_constraints)
         self.old_vars_constraints = []
@@ -682,11 +690,13 @@ class OneLayer:
                 for k in range(K):
                     # lower_objs.append(self.upper_chp_power_output[chp, time, k] * self.upper_chp_power_quoted_price[chp, time])
                     lower_objs.append(self.upper_chp_heat_output[chp, time, k] * self.upper_chp_heat_quoted_price[chp, time])
+                    lower_objs.append(self.upper_chp_heat_output[chp, time, k] * self.dual)
         # UPPER CHP 的 买气 成本 ????? ！！！！！
         for chp in range(self.chp_upper_num):
             for time in range(T):
                 for k in range(K):
-                    lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) * self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], time, k])
+                    lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) *
+                                      self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], time, k])
 
         # ！！！！？？？？？
         # Lower CHP : 耗气量 * 节点边际气价

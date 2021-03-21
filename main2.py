@@ -31,7 +31,7 @@ def do_main():
     distribution = empirical_distribution
     alpha = 0.6
 
-    linearization_point: List[ndarray] = [np.ones((5, 1, 1)), np.ones((5, 1, 1)), np.ones((5, 1, 1)), np.ones((5, 1, 1))]
+    linearization_point: List[ndarray] = [np.zeros((5, 1, 1)), np.zeros((5, 1, 1)), np.zeros((5, 1, 1)), np.zeros((5, 1, 1))]
     obj_k = 'suppress a warning'
     PUNISH = 2
 

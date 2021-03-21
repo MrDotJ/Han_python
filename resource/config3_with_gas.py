@@ -638,8 +638,8 @@ def get_config():
     gas_load_info = np.array([
     #   node     percent
         [0,      0.5],
-        [2,      0.2],
-        [3,      0.3],
+        [1,      0.2],
+        [2,      0.3],
     ])
 
     chp_upper_connection_gas_index = np.array(
