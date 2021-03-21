@@ -4,7 +4,7 @@ from numpy.core._multiarray_umath import ndarray
 
 from first_stage_heat_gas import OneLayer
 from second_stage import SecondLayer
-from config3_with_gas import get_config, empirical_distribution, confidence_level
+from config4_with_gas import get_config, empirical_distribution, confidence_level
 import numpy as np
 from copy import deepcopy
 

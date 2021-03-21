@@ -1,5 +1,5 @@
 from resource.utility import *
-from resource.config3_with_gas import T, K
+from resource.config4_with_gas import T, K
 from math import sqrt
 
 
@@ -301,6 +301,8 @@ class OneLayer:
     def build_heat_system(self):
         self.upper_chp_heat_quoted_price_tuple_dict = self.model.addVars(self.chp_upper_num, T, lb=0, name='upper_chp_heat_quoted_price')
         self.upper_chp_heat_quoted_price            = tonp( self.upper_chp_heat_quoted_price_tuple_dict )
+        self.upper_chp_gas_quoted_price_tuple_dict  = self.model.addVars(self.chp_upper_num, T, lb=0, name='upper_chp_gas_quoted_price')
+        self.upper_chp_gas_quoted_price             = tonp( self.upper_chp_gas_quoted_price_tuple_dict )
 
         self.upper_chp_point                    = tonp( self.model.addVars(self.chp_upper_num, self.chp_point_num, T, K, name='upper_chp_point',          lb=-1 * INFINITY, ub=INFINITY ) )
         self.lower_chp_point                    = tonp( self.model.addVars(self.chp_lower_num, self.chp_point_num, T, K, name='lower_chp_point',          lb=-1 * INFINITY, ub=INFINITY ) )
@@ -503,7 +505,7 @@ class OneLayer:
                         sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
                             self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
                     self.dual_node_gas_balance[node, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k))
-                    self.model.addConstr(self.dual_node_gas_balance[node, t, k] <= 5)
+                    # self.model.addConstr(self.dual_node_gas_balance[node, t, k] <= 5)
                     dual_expr.append(expr1)
 
         for line in self.gas_inactive_line:
@@ -690,14 +692,18 @@ class OneLayer:
                 for k in range(K):
                     # lower_objs.append(self.upper_chp_power_output[chp, time, k] * self.upper_chp_power_quoted_price[chp, time])
                     lower_objs.append(self.upper_chp_heat_output[chp, time, k] * self.upper_chp_heat_quoted_price[chp, time])
-                    lower_objs.append(self.upper_chp_heat_output[chp, time, k] * self.dual)
+                    # lower_objs.append(self.upper_chp_heat_output[chp, time, k] * self.dual)
         # UPPER CHP 的 买气 成本 ????? ！！！！！
         for chp in range(self.chp_upper_num):
             for time in range(T):
                 for k in range(K):
                     lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) *
                                       self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], time, k])
-
+        # 按照报价购买
+        for chp in range(self.chp_upper_num):
+            for time in range(T):
+                for k in range(K):
+                    lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) * self.upper_chp_gas_quoted_price[chp, time])
         # ！！！！？？？？？
         # Lower CHP : 耗气量 * 节点边际气价
         # for chp in range(self.chp_lower_num):
@@ -741,7 +747,14 @@ class OneLayer:
                     sense=gurobi.GRB.LESS_EQUAL,
                     name='upper_chp_heat_quoted_price_max' + str(t) + 'chp_' + str(chp)
                 )
-
+        for chp in range(self.chp_upper_num):
+            for t in range(T):
+                self.model.addConstr(
+                    lhs=self.upper_chp_gas_quoted_price_tuple_dict[chp, t],
+                    rhs=10,
+                    sense=gurobi.GRB.LESS_EQUAL,
+                    name='upper_chp_gas_quoted_price_max' + str(t) + "chp_" + str(chp)
+                )
         for well in range(self.well_upper_num):
             for t in range(T):
                 self.model.addConstr(
