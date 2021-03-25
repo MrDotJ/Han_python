@@ -31,13 +31,13 @@ def do_main():
     distribution = empirical_distribution
     alpha = 0.6
 
-    linearization_point: List[ndarray] = [np.zeros((5, 1, 1)), np.zeros((5, 1, 1)), np.zeros((5, 1, 1)), np.zeros((5, 1, 1))]
+    linearization_point: List[ndarray] = [np.zeros((5, 5, 5)), np.zeros((5, 5, 5)), np.zeros((5, 5, 5)), np.zeros((5, 5, 5))]
     obj_k = 'suppress a warning'
     PUNISH = 2
 
     for _ in range(1): # CCG layer
         print('===>first stage')
-        penalty = 1
+        penalty = 0
         for index in range(1):   # PCCP layer
             # 2. update pccp-related objective and constraints
             first_layer.update_gas_system_pccp_original_and_dual_constraints(linearization_point[1], linearization_point[2], linearization_point[3])
@@ -45,7 +45,7 @@ def do_main():
             first_layer.build_kkt_derivative_constraints(penalty)
             # 4. save old information and update penalty
             linearization_point_old = deepcopy(linearization_point[1:])
-            penalty = penalty * PUNISH if index > 0 else 1
+            penalty = penalty * PUNISH if index > 0 else 0
             # 5. optimize the model
             # [generator, chp_power, chp_heat], [revenue_1, ..., revenue_k], [pressure_end, flow_in, flow_out]
             quoted_price, obj_k, linearization_point, pccp, weymouth_left, weymouth_right = first_layer.optimize(distribution)

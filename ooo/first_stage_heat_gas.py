@@ -499,13 +499,13 @@ class OneLayer:
                         sum(self.lower_gas_well_output[  np.where(self.well_lower_connection_index    == node), t, k].flatten()) +  \
                         sum(self.gas_flow_out[           np.where(self.gas_pipe_end_node              == node), t, k].flatten()) -  \
                         sum(self.gas_flow_in[            np.where(self.gas_pipe_start_node            == node), t, k].flatten()) -   \
-                        sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten()) -  \
-                        sum((self.upper_chp_heat_output[ np.where(self.chp_upper_connection_gas_index == node), t, k] *
-                            self.chp_upper_coeff_h_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
-                        sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
-                            self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
-                    self.dual_node_gas_balance[node, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k))
-                    # self.model.addConstr(self.dual_node_gas_balance[node, t, k] <= 5)
+                        sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten()) #-  \
+                        # sum((self.upper_chp_heat_output[ np.where(self.chp_upper_connection_gas_index == node), t, k] *
+                        #     self.chp_upper_coeff_h_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
+                        # sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
+                        #     self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
+                    self.dual_node_gas_balance[node, t, k], expr1 = Complementary_equal(1*cons_expr1, self.model, 'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'scenario_' + str(k))
+                    self.model.addConstr(self.dual_node_gas_balance[node, t, k] >= 0)
                     dual_expr.append(expr1)
 
         for line in self.gas_inactive_line:
@@ -529,22 +529,22 @@ class OneLayer:
                     self.dual_linepack_with_time[line, t, k], expr2 = Complementary_equal(cons_expr2, self.model, 'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
-
-        for line in self.gas_active_line:
-            for t in range(T):
-                for k in range(K):
-                    cons_expr1 = self.gas_flow_out[line, t, k] - 0.97 * self.gas_flow_in[line, t, k]
-                    self.dual_compressor_consume[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_gas_flow_active_line_' + str(line) + '_time_' + str(t) + '_scenario_' + str(k))
-                    dual_expr.append(expr1)
-
-        for compressor, line in enumerate(self.gas_active_line):
-            for t in range(T):
-                for k in range(K):
-                    cons_expr1 = self.gas_compressor_coeff[compressor] * self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] - \
-                                 self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]
-                    self.dual_compressor_pressure_up[compressor, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_compressor_pressure_' + str(compressor) + '_t_' + str(t) + '_scenario_' + str(k))
-                    dual_expr.append(expr1)
-
+        #
+        # for line in self.gas_active_line:
+        #     for t in range(T):
+        #         for k in range(K):
+        #             cons_expr1 = self.gas_flow_out[line, t, k] - 0.97 * self.gas_flow_in[line, t, k]
+        #             self.dual_compressor_consume[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'dual_gas_flow_active_line_' + str(line) + '_time_' + str(t) + '_scenario_' + str(k))
+        #             dual_expr.append(expr1)
+        #
+        # for compressor, line in enumerate(self.gas_active_line):
+        #     for t in range(T):
+        #         for k in range(K):
+        #             cons_expr1 = self.gas_compressor_coeff[compressor] * self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] - \
+        #                          self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]
+        #             self.dual_compressor_pressure_up[compressor, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_compressor_pressure_' + str(compressor) + '_t_' + str(t) + '_scenario_' + str(k))
+        #             dual_expr.append(expr1)
+        #
         for well in range(self.well_upper_num):
             for t in range(T):
                 for k in range(K):
@@ -574,14 +574,14 @@ class OneLayer:
                     self.dual_gas_node_pressure_max[node, t, k], expr2 = Complementary_great(cons_expr2, self.model, 'dual_node_pressure_max_' + str(node) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_expr.append(expr1)
                     dual_expr.append(expr2)
-
-        for line in range(self.gas_line_num):
-            for t in range(T):
-                for k in range(K):
-                    cons_expr1 = self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
-                    self.dual_gas_flow_in_and_out_great_zero[line, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_gas_flow_great_zero_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-                    dual_expr.append(expr1)
-
+        #
+        # for line in range(self.gas_line_num):
+        #     for t in range(T):
+        #         for k in range(K):
+        #             cons_expr1 = self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
+        #             self.dual_gas_flow_in_and_out_great_zero[line, t, k], expr1 = Complementary_great(cons_expr1, self.model, 'dual_gas_flow_great_zero_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+        #             dual_expr.append(expr1)
+        #
         for line in range(self.gas_line_num):
             for t in range(T):
                 for k in range(K):
@@ -597,7 +597,7 @@ class OneLayer:
                     dual_expr.append(expr2)
                     dual_expr.append(expr3)
                     dual_expr.append(expr4)
-
+        #
         for line in range(self.gas_line_num):
             for t in range(T):
                 for k in range(K):
@@ -606,29 +606,29 @@ class OneLayer:
                         Complementary_great(cons_expr1, self.model, 'dual_pccp_relax_great_zero' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_expr.append(expr1)
 
-        # self.douvar = []
-        # for line in self.gas_inactive_line:
-        #     for t in range(T):
-        #         for k in range(K):
-        #             cons_expr1 = self.aux_weymouth_left[line, t, k] - ((self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2)
-        #             self.dual_weymouth_aux_left[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'weymouth_relax_left_auxiliary_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-        #             self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], expr2 = Complementary_soc(
-        #                 [1, sqrt(self.gas_weymouth[line])],
-        #                 [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
-        #                 [sqrt(self.gas_weymouth[line])],
-        #                 [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
-        #                 self.model,
-        #                 'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
-        #             dual_expr.append(expr1)
-        #             dual_expr.append(expr2)
-        #             self.douvar.append(expr2)
+        self.douvar = []
         for line in self.gas_inactive_line:
             for t in range(T):
                 for k in range(K):
-                    cons_expr1 = self.gas_weymouth[line] * (self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] - self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]) - \
-                                 (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k])
-                    _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_weymouth_simplify' + str(line) + str(t) + str(k))
+                    cons_expr1 = self.aux_weymouth_left[line, t, k] - ((self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]) / 2)
+                    self.dual_weymouth_aux_left[line, t, k], expr1 = Complementary_equal(cons_expr1, self.model, 'weymouth_relax_left_auxiliary_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
+                    self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], expr2 = Complementary_soc(
+                        [1, sqrt(self.gas_weymouth[line])],
+                        [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
+                        [sqrt(self.gas_weymouth[line])],
+                        [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
+                        self.model,
+                        'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_scenario_' + str(k))
                     dual_expr.append(expr1)
+                    dual_expr.append(expr2)
+                    self.douvar.append(expr2)
+        # for line in self.gas_inactive_line:
+        #     for t in range(T):
+        #         for k in range(K):
+        #             cons_expr1 = self.gas_weymouth[line] * (self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] - self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]) - \
+        #                          (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k])
+        #             _, expr1 = Complementary_equal(cons_expr1, self.model, 'dual_weymouth_simplify' + str(line) + str(t) + str(k))
+        #             dual_expr.append(expr1)
         self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
 
     # 每次迭代， 更新 PCCP 部分
@@ -703,7 +703,7 @@ class OneLayer:
         for chp in range(self.chp_upper_num):
             for time in range(T):
                 for k in range(K):
-                    lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) * self.upper_chp_gas_quoted_price[chp, time])
+                    lower_objs.append(-1 * (self.upper_chp_heat_output[chp, time, k] * self.chp_upper_coeff_h_1[chp]) * 1)#self.upper_chp_gas_quoted_price[chp, time])
         # ！！！！？？？？？
         # Lower CHP : 耗气量 * 节点边际气价
         # for chp in range(self.chp_lower_num):
@@ -782,8 +782,8 @@ class OneLayer:
             for chp in range(self.chp_upper_num):
                 for t in range(T):
                     expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.dual_heater_balance[self.chp_upper_connection_heater_index[chp], t, k])
-                    # expected_cost.append(-1 * self.upper_chp_heat_output[chp, t, k] * self.chp_upper_coeff_h_1[chp])     # 写法1
-                    expected_cost.append((-1 * self.upper_chp_heat_output[chp, t, k] * self.chp_upper_coeff_h_1[chp]) * self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], t, k])    # 写法2
+                    expected_cost.append(-1 * self.upper_chp_heat_output[chp, t, k] * self.chp_upper_coeff_h_1[chp])     # 写法1
+                    # expected_cost.append((-1 * self.upper_chp_heat_output[chp, t, k] * self.chp_upper_coeff_h_1[chp]) * self.dual_node_gas_balance[self.chp_upper_connection_gas_index[chp], t, k])    # 写法2
             # well  气井的收益
             for well in range(self.well_upper_num):
                 for t in range(T):
