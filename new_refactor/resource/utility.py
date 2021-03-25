@@ -3,7 +3,7 @@ import numpy as np
 
 M = 1e7
 INFINITY = gurobi.GRB.INFINITY
-
+INF = INFINITY
 
 class MyExpr:
     def __init__(self, quad_expr: gurobi.QuadExpr):
@@ -55,7 +55,7 @@ class MyExpr:
         model.addConstr(expr == 0, name=name)
 
 
-def Complementary_great(expr, model, dual_var_name, dual_expression):  # expr should be greater than zero
+def Complementary_great(expr, model, dual_expression, dual_obj, dual_var_name):  # expr should be greater than zero
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
     var_dual = model.addVar(name=dual_var_name)
     var_bin = model.addVar(vtype=gurobi.GRB.BINARY, name=dual_var_name + "_binary")
@@ -64,12 +64,20 @@ def Complementary_great(expr, model, dual_var_name, dual_expression):  # expr sh
     model.addConstr(var_dual >= 0, name='dual_feasible_' + dual_var_name)
     model.addConstr(var_dual <= M * (1 - var_bin), name='dual_feasible_M_' + dual_var_name)
     dual_expression.append(-1 * expr * var_dual)
+    if type(expr) == gurobi.Var:
+        dual_obj.append(0)
+    else:
+        dual_obj.append(-1 * expr.getConstant() * var_dual)
     return var_dual
-def Complementary_equal(expr, model, dual_var_name, dual_expression):
+def Complementary_equal(expr, model, dual_expression, dual_obj, dual_var_name):
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
     var_dual = model.addVar(lb=-1 * INFINITY, ub=INFINITY, name='dual_' + dual_var_name)
     model.addConstr(-1 * expr == 0, name=dual_var_name + '[EqualFeasible]')
-    dual_expression.append(-1 * expr * var_dual)
+    dual_expression.append(1 * expr * var_dual)
+    if type(expr) == gurobi.Var:
+        dual_obj.append(0)
+    else:
+        dual_obj.append(expr.getConstant() * var_dual)
     return var_dual
 def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_var_name, dual_expression):
     left_var_length = len(left_coeff)

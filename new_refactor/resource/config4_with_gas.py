@@ -1,5 +1,5 @@
 import numpy as np
-T = 4
+T = 1
 K = 1
 empirical_distribution = [1/K] * K
 confidence_level = 0.2
