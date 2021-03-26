@@ -81,25 +81,25 @@ def get_config():
     upper_chp_info = np.array([
         # a0   p1        a1 p2       a2  h1         a3  h2       a4 cross        a5 const             heater     bid_power      bid_heat
         [
-          20 * 0.6,    0 * 0.06,   1.5 * 0.06,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10
+          20 * 0.6,    0 * 0.06,   1.5 * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,           0,          20,              10
         ],
         [
-            20 * 0.6,   0 * 0.06,   1.5 * 0.06,      .0 * 0.6,    0. * 0.6,     0.0 * 0.6,            0,          20,              10
+            20 * 0.6,   0 * 0.06,   1.5 * 0.6,      .0 * 0.6,    0. * 0.6,     0.0 * 0.6,            0,          20,              10
         ],
         [
-            20 * 0.6,   0 * 0.06,   1.5 * 0.06,      .0 * 0.6,    0. * 0.6,     0.0 * 0.6,            0,          20,              10
+            20 * 0.6,   0 * 0.06,   1.5 * 0.6,      .0 * 0.6,    0. * 0.6,     0.0 * 0.6,            0,          20,              10
         ],
         [
-            20 * 0.6,   0 * 0.06,   1.5 * 0.06,      .0 * 0.6,    0. * 0.6,     0.0 * 0.6,            0,          20,              10
+            20 * 0.6,   0 * 0.06,   1.5 * 0.6,      .0 * 0.6,    0. * 0.6,     0.0 * 0.6,            0,          20,              10
         ],
     ])
 
     lower_chp_info = np.array([
         [
-            2 * 0.6,   0 * 0.06,     1. * 0.06,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+            2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
         ],
         [
-            2 * 0.6,   0 * 0.06,     1. * 0.06,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+            2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
          ],
         [
             2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
@@ -221,6 +221,10 @@ def get_config():
     lower_well_info = np.array([
         [4,       0.0,             0,            2.8 ],
     ])
+
+    lower_chp_connection_well_index = np.array([0, 0, 0, 0])
+    upper_chp_connection_well_index = np.array([0, 0, 0, 0])
+
     gas_pipe_line_info = np.array([
     #  start     end       weymouth     linepack   index   is_active   flow_min   flow_max
         [5,       3,        0.193/0.193,       0.0,     0,       0,           0,        20 ],
@@ -232,12 +236,12 @@ def get_config():
 
     gas_node_info = np.array([
     #   Node     MaxPressure(bar)   MinPressure(bar)
-        [0,           8.28 * 1,           7.34 * 0 ],
-        [1,           8.28 * 1,           7.34 * 0 ],
-        [2,           8.28 * 1,           7.34 * 0 ],
-        [3,           8.28 * 1,           7.34 * 0 ],
-        [4,           8.28 * 1,           7.34 * 0 ],
-        [5,           8.28 * 1,           7.34 * 0 ],
+        [0,           8.28 * 10,           7.34 * 0 ],
+        [1,           8.28 * 10,           7.34 * 0 ],
+        [2,           8.28 * 10,           7.34 * 0 ],
+        [3,           8.28 * 10,           7.34 * 0 ],
+        [4,           8.28 * 10,           7.34 * 0 ],
+        [5,           8.28 * 10,           7.34 * 0 ],
     ])
 
     compressor_info = np.array([
@@ -390,6 +394,8 @@ def get_config():
         'gas_load': gas_load_info[:, 1].reshape((-1, 1)).dot(gas_load_total.reshape((1, -1))),
         'gas_load_connection_index': gas_load_info[:, 0].astype(np.int),
         'chp_upper_connection_gas_index': chp_upper_connection_gas_index.astype(np.int),
-        'chp_lower_connection_gas_index': chp_lower_connection_gas_index.astype(np.int)
+        'chp_lower_connection_gas_index': chp_lower_connection_gas_index.astype(np.int),
+        'lower_chp_connection_well_index': lower_chp_connection_well_index,
+        'upper_chp_connection_well_index': upper_chp_connection_well_index,
     }
     return power_system, heat_system, chp_system, gas_system
