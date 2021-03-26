@@ -219,7 +219,7 @@ def get_config():
         [5,       33.36,             0,            2.2,             4.4],
     ])
     lower_well_info = np.array([
-        [4,       33.36,             0,            2.8 ],
+        [4,       0.0,             0,            2.8 ],
     ])
     gas_pipe_line_info = np.array([
     #  start     end       weymouth     linepack   index   is_active   flow_min   flow_max

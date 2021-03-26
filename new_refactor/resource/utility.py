@@ -73,11 +73,11 @@ def Complementary_equal(expr, model, dual_expression, dual_obj, dual_var_name):
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
     var_dual = model.addVar(lb=-1 * INFINITY, ub=INFINITY, name='dual_' + dual_var_name)
     model.addConstr(-1 * expr == 0, name=dual_var_name + '[EqualFeasible]')
-    dual_expression.append(1 * expr * var_dual)
+    dual_expression.append(-1 * expr * var_dual)
     if type(expr) == gurobi.Var:
         dual_obj.append(0)
     else:
-        dual_obj.append(expr.getConstant() * var_dual)
+        dual_obj.append(-1 * expr.getConstant() * var_dual)
     return var_dual
 def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_var_name, dual_expression):
     left_var_length = len(left_coeff)
