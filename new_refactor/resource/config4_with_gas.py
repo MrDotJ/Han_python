@@ -96,13 +96,13 @@ def get_config():
 
     lower_chp_info = np.array([
         [
-            2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+            2 * 0.6,   0 * 0.06,     1. * 3.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
         ],
         [
-            2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+            2 * 0.6,   0 * 0.06,     1. * 2.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
          ],
         [
-            2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
+            2 * 0.6,   0 * 0.06,     1. * 1.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
         ],
         [
             2 * 0.6,   0 * 0.06,     1. * 0.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
@@ -131,10 +131,10 @@ def get_config():
     ])
 
     lower_chp_HEAT = np.array([
-        [0.3*0.1, 0.2*0.1, 0.1*0.1, 0.0],
-        [0.1*0.1, 0.5*0.1, 0.3*0.1, 0.0],
-        [0.3*0.1, 0.2*0.1, 0.1*0.1, 0.0],
-        [0.3*0.1, 0.2*0.1, 0.1*0.1, 0.0],
+        [0.3*1,      0.2*1,      0.1*1,       0.0],
+        [0.1*1,      0.5*1,      0.3*1,       0.0],
+        [0.3*1,      0.2*1,      0.1*1,       0.0],
+        [0.3*1,      0.2*1,      0.1*1,       0.0],
     ])
     upper_chp_power_index = np.array([
         2, 2, 2, 2,
@@ -145,10 +145,17 @@ def get_config():
     ])
 
     chp_upper_connection_gas_index = np.array([
-        4, 3, 3, 3
+        1, 3, 3, 3
     ])
     chp_lower_connection_gas_index = np.array([
         5, 5, 5, 5
+    ])
+
+    lower_chp_connection_well_index = np.array([
+        0, 0, 0, 0
+    ])
+    upper_chp_connection_well_index = np.array([
+        0, 0, 0, 0
     ])
 
     heat_network_supply = np.array([
@@ -222,8 +229,8 @@ def get_config():
         [4,       0.0,             0,            2.8 ],
     ])
 
-    lower_chp_connection_well_index = np.array([0, 0, 0, 0])
-    upper_chp_connection_well_index = np.array([0, 0, 0, 0])
+
+
 
     gas_pipe_line_info = np.array([
     #  start     end       weymouth     linepack   index   is_active   flow_min   flow_max
