@@ -2,6 +2,8 @@ import gurobipy as gurobi
 import numpy as np
 
 M = 1e7
+N = 10
+
 INFINITY = gurobi.GRB.INFINITY
 INF = INFINITY
 
@@ -137,7 +139,6 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
     dual_var = tonp(dual_left).tolist() + tonp(dual_right).tolist()
     coeff = left_coeff + right_coeff
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
-    N = 30
     measurement = []
     for i in range(left_var_length + right_var_length):
         wij = w[i]
@@ -216,7 +217,6 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     coeff = left_coeff + right_coeff
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
     var_linear.append(w)
-    N = 30
     measurement = []
     for i in range(left_var_length + right_var_length):
         wij = w[i]

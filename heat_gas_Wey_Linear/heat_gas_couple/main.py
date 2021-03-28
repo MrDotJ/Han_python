@@ -2,7 +2,7 @@ from typing import List
 
 from numpy.core._multiarray_umath import ndarray
 
-from first_stage_heat_gas_pccp_PWL import OneLayer
+from first_stage_heat_gas_bid_gas_buy_price import OneLayer
 from second_stage import SecondLayer
 from resource.config4_with_gas import get_config, empirical_distribution, confidence_level
 import numpy as np
