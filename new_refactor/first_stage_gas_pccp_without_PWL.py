@@ -1,4 +1,4 @@
-from resource.utility_soc_PWL import *
+from resource.utility import *
 from resource.config4_with_gas import T, K
 from math import sqrt
 
@@ -243,7 +243,8 @@ class OneLayer:
         self.do_nothing                                     = 0
         self.equivalent_cost                                = 0
         self.equivalent_revenue                             = 0
-        self.old_vars_constraints                           = []
+        self.old_vars                                       = []
+        self.old_constraints                                = []
         self.objection_aux_update                           = []
         self.old_dual_obj                                   = []
         self.DE = [[] for i in range(K)]
@@ -510,8 +511,9 @@ class OneLayer:
                         #     self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
                     self.dual_node_gas_balance[node, t, k] = Complementary_equal(
                         1*cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'S_' + str(k))
-                    # self.model.addConstr(self.dual_node_gas_balance[node, t, k] <= 20)
+                        'node_gas_balance[' + '_node_' + str(node) + str(t) + 'S_' + str(k))
+                    self.model.addConstr(self.dual_node_gas_balance[node, t, k] <= 20)
+                    self.model.addConstr(self.dual_node_gas_balance[node, t, k] >= 1)
             for line in self.gas_inactive_line:
                 for t in range(0, T-1):
                     cons_expr1 = self.gas_linepack[line, t, k] - self.gas_linepack_coeff[line] * (
@@ -641,12 +643,7 @@ class OneLayer:
                         [sqrt(self.gas_weymouth[line])],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
                         self.model, self.DE[k], self.Dobj[k],
-                        'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_S_' + str(k),
-                        [-100, -100, -100],
-                        [100, 100, 100],
-                        [-100, -100, -100],
-                        [100, 100, 100]
-                        )
+                        'weymouth_relax_left_soc_' + str(line) + '_t_' + str(t) + '_S_' + str(k))
 
             # for line in self.gas_inactive_line:
             #     for t in range(T):
@@ -665,8 +662,10 @@ class OneLayer:
             self.Dobj[k].extend([self.old_dual_obj[i] * (-1) for i in range(len(self.old_dual_obj))])
         self.old_dual_obj = []
 
-        self.model.remove(self.old_vars_constraints)
-        self.old_vars_constraints = []
+        self.model.remove(self.old_vars)
+        self.model.remove(self.old_constraints)
+        self.old_vars = []
+        self.old_constraints = []
 
         for k in range(K):
             for line in self.gas_inactive_line:
@@ -698,7 +697,7 @@ class OneLayer:
 
                     # 构建SOC 约束
                     # 左对偶变量, 右对偶变量,  原SOC约束,      对偶SOC约束,      互补为零约束,     lagrange项
-                    dual_left, dual_right, constr_original, constr_dual, var_line, constrain_line = \
+                    dual_left, dual_right, constr_original, constr_dual, constr_comp  = \
                         Complementary_soc_plus(
                         [2 * d, 1],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
@@ -706,14 +705,10 @@ class OneLayer:
                         [1],
                         [self.aux_weymouth_right_2[line, t, k]],
                         self.model, self.DE[k], self.Dobj[k],
-                        'WEY_relax_right_soc' + str(line) + '_t_' + str(t) + '_S_' + str(k),
-                        [-10, -10, -10],
-                        [10, 10, 10],
-                        [-10, -10, -10],
-                        [10, 10, 10])
+                        'WEY_relax_right_soc' + str(line) + '_t_' + str(t) + '_S_' + str(k))
                     # 追加旧的变量及约束
-                    self.old_vars_constraints.extend([dual_vars1, dual_vars2, dual_left, dual_right, var_line])
-                    self.old_vars_constraints.extend([constr1, constr2, constr_original, constr_dual, constrain_line])
+                    self.old_vars.extend([dual_vars1, dual_vars2, dual_left, dual_right])
+                    self.old_constraints.extend([constr1, constr2, constr_original, constr_dual, constr_comp])
                     self.old_dual_obj.extend([dual_obj1, dual_obj2])
             # 用于 每次 更新 KKT 等价 部分
 
