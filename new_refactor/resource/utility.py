@@ -84,10 +84,10 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
     right_var_length = len(right_coeff)
     # 左侧对偶变量
     dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
-                              name=dual_var_name + '_dual_left')
+                              name=dual_var_name + '_left')
     # 右侧对偶变量
     dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
-                               name=dual_var_name + '_dual_right')
+                               name=dual_var_name + '_right')
     # 添加原锥约束
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
                                  for i in range(left_var_length)])
@@ -125,28 +125,28 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     right_var_length = len(right_coeff)
     # 左侧对偶变量
     dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
-                              name=dual_var_name + '_dual_left')
+                              name=dual_var_name + '_left')
     # 右侧对偶变量
     dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
-                               name=dual_var_name + '_dual_right')
+                               name=dual_var_name + '_right')
     # 添加原锥约束
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
                                  for i in range(left_var_length)])
     expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * right_var[i] * right_var[i]
                                   for i in range(right_var_length)])
-    constr_original = model.addConstr(expr_left <= expr_right, name=dual_var_name + '[Original]')
+    constr_original = model.addConstr(expr_left <= expr_right, name='[Original]' + dual_var_name)
     # 添加对偶锥约束
     dual_expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * dual_left[i] * dual_left[i]
                                       for i in range(left_var_length)])
     dual_expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * dual_right[i] * dual_right[i]
                                        for i in range(right_var_length)])
-    constr_dual = model.addConstr(dual_expr_left <= dual_expr_right, name=dual_var_name + '[Dual]')
+    constr_dual = model.addConstr(dual_expr_left <= dual_expr_right, name='[Dual]' + dual_var_name)
     # 添加互补约束
     lagrange_sum = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * dual_left[i]
                                     for i in range(left_var_length)]) + \
                    gurobi.quicksum([right_coeff[i] * right_coeff[i] *  right_var[i] * dual_right[i]
                                     for i in range(right_var_length)])
-    complementary_constr = model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
+    complementary_constr = model.addConstr(lagrange_sum == 0, name='[Lagrange]' + dual_var_name)
 
     dual_expression.append(-1 * lagrange_sum)
     dual_obj.append(0)

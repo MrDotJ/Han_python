@@ -138,11 +138,13 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
     coeff = left_coeff + right_coeff
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
     N = 20
+    measurement = []
     for i in range(left_var_length + right_var_length):
         wij = w[i]
         binary = model.addVars(N, vtype=gurobi.GRB.BINARY)
         xi = dual_var[i]
         xj = original_var[i]
+        measurement.append(wij - xi * xj)
         xi_min = dual_var_min[i]
         xi_max = dual_var_max[i]
         xj_min = original_var_min[i]
@@ -166,7 +168,7 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
 
     dual_expression.append(-1 * lagrange_sum)
     dual_obj.append(0)
-    return dual_left, dual_right
+    return dual_left, dual_right, measurement
 def Complementary_equal_plus(expr, model, dual_expression, dual_obj, dual_var_name):
     assert (type(expr) == gurobi.LinExpr or type(expr) == gurobi.Var)
     var_dual = model.addVar(lb=-1 * INFINITY, ub=INFINITY, name='dual_' + dual_var_name)
@@ -216,12 +218,14 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
     var_linear.append(w)
     N = 20
+    measurement = []
     for i in range(left_var_length + right_var_length):
         wij = w[i]
         binary = model.addVars(N, vtype=gurobi.GRB.BINARY)
         var_linear.append(binary)
         xi = dual_var[i]
         xj = original_var[i]
+        measurement.append(wij - xi * xj)
         xi_min = dual_var_min[i]
         xi_max = dual_var_max[i]
         xj_min = original_var_min[i]
@@ -252,7 +256,7 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
 
     dual_expression.append(-1 * lagrange_sum)
     dual_obj.append(0)
-    return dual_left, dual_right, constr_original, constr_dual, var_linear, constrain_linear
+    return dual_left, dual_right, constr_original, constr_dual, var_linear, constrain_linear, measurement
 
 
 # this is just original constraints for test START
