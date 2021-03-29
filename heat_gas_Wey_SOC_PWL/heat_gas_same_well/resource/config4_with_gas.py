@@ -152,10 +152,10 @@ def get_config():
     ])
 
     lower_chp_connection_well_index = np.array([
-        0, 0, 0, 0
+        0, 1, 1, 0
     ])
     upper_chp_connection_well_index = np.array([
-        0, 0, 0, 0
+        0, 1, 1, 0
     ])
 
     heat_network_supply = np.array([
@@ -223,10 +223,16 @@ def get_config():
     # #                                             5W(U) CHP CHP
     upper_well_info = np.array([
     #  node    max(Sm3/h)      min(Sm3/h)     cost($/Sm3)    quoted_max($/Sm3)
-        [5,       33.36,             0,            2.2,             4.4],
+        [5,       1.36,             0,            2.0,             4.8],
+        [5,       1.36,             0,            2.2,             4.4],
+        [5,       1.36,             0,            2.4,             4.6],
+        [5,       1.36,             0,            2.6,             4.5],
     ])
     lower_well_info = np.array([
         [4,       0.0,             0,            2.8 ],
+        [4,       0.3,             0,            2.8 ],
+        [4,       0.1,             0,            2.8 ],
+        [4,       0.1,             0,            2.8 ],
     ])
 
 

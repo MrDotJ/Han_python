@@ -4,6 +4,7 @@ import numpy as np
 M = 1e7
 INFINITY = gurobi.GRB.INFINITY
 INF = INFINITY
+N = 10
 
 class MyExpr:
     def __init__(self, quad_expr: gurobi.QuadExpr):
@@ -109,35 +110,10 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
     # model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
 
     # # =============== deal with lagrange sum equal zero ==============
-    # xi is dual variables, xj is original variables
-    # xj_min , xj_max, N
-    # xj_min = 0
-    # xj_max = 10
-    # xi_min = 0
-    # xi_max = 10
-    # N = 20
-    # xjn_min = np.arange(N) / N * (xj_max - xj_min) + xj_min
-    # xjn_max = (np.arange(N) + 1) / N * (xj_max - xj_min) + xj_min
-    #
-    # binary = model.addVars(N, vtype=gurobi.GRB.BINARY)
-    # wij = model.addVar(lb=-1*INF, ub=INF)
-    # model.addConstr(xi >= xi_min)
-    # model.addConstr(xi <= xi_max)
-    #
-    # for n in range(N):
-    #     model.addConstr((binary[n] == 1) >> (wij >= (xi * xjn_min[n] + xj * xi_min - xi_min * xjn_min[n])))
-    #     model.addConstr((binary[n] == 1) >> (wij >= (xi * xjn_max[n] + xj * xi_max - xi_max * xjn_max[n])))
-    #     model.addConstr((binary[n] == 1) >> (wij <= (xi * xjn_min[n] + xj * xi_max - xi_max * xjn_min[n])))
-    #     model.addConstr((binary[n] == 1) >> (wij <= (xi * xjn_max[n] + xj * xi_min - xi_min * xjn_max[n])))
-    #     model.addConstr((binary[n] == 1) >> (xjn_min[n] <= xj))
-    #     model.addConstr((binary[n] == 1) >> (xj <= xjn_max[n]))
-    # model.addConstr(gurobi.quicksum(binary) == 1)
-
     original_var = left_var + right_var
     dual_var = tonp(dual_left).tolist() + tonp(dual_right).tolist()
     coeff = left_coeff + right_coeff
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
-    N = 30
     measurement = []
     for i in range(left_var_length + right_var_length):
         wij = w[i]
@@ -216,7 +192,6 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     coeff = left_coeff + right_coeff
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
     var_linear.append(w)
-    N = 30
     measurement = []
     for i in range(left_var_length + right_var_length):
         wij = w[i]

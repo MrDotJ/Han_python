@@ -156,6 +156,9 @@ class OneLayer:
         self.upper_chp_heat_quoted_price_tuple_dict         = None
         self.upper_well_quoted_price_tuple_dict             = None
 
+        self.upper_chp_gas_quoted_price_tuple_dict          = None
+        self.upper_chp_gas_quoted_price                     = None
+
         self.upper_generator_power_output                   = None
         self.lower_generator_power_output                   = None
 
@@ -394,10 +397,10 @@ class OneLayer:
                     cons_expr3 = sum(self.upper_chp_point[chp, :, t, k]) - 1
                     self.dual_upper_chp_heat_output[chp, t, k] = Complementary_equal(
                         -1 * cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_upper_chp_heat_output_' + str(t) + '_' + str(chp) + 'S' + str(k))
+                        'upper_chp_heat_output[' + str(chp) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_upper_chp_point_sum_one[chp, t, k] = Complementary_equal(
                         cons_expr3, self.model, self.DE[k], self.Dobj[k],
-                        'dual_upper_chp_point_sum_one' + str(t) + '_' + str(chp) + 'S' + str(k))
+                        'upper_chp_point_sum_one[' + str(chp) + ',' + str(t) + ',' + str(k) + ']')
 
             for chp in range(self.chp_lower_num):
                 for t in range(T):
@@ -406,34 +409,34 @@ class OneLayer:
                     cons_expr3 = sum(self.lower_chp_point[chp, :, t, k]) - 1
                     self.dual_lower_chp_heat_output[chp, t, k] = Complementary_equal(
                         -1 * cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_lower_chp_heat_output_' + str(t) + '_' + str(chp) + 'S' + str(k))
+                        'lower_chp_heat_output[' + str(chp) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_lower_chp_point_sum_one[chp, t, k] = Complementary_equal(
                         cons_expr3, self.model, self.DE[k], self.Dobj[k],
-                        'dual_lower_chp_point_sum_one' + str(t) + '_' + str(chp) + 'S' + str(k))
+                        'lower_chp_point_sum_one[' + str(chp) + ',' + str(t) + ',' + str(k) + ']')
 
             for chp in range(self.chp_upper_num):
-                for point in range(self.chp_point_num):
+                for p in range(self.chp_point_num):
                     for t in range(T):
-                        cons_expr1 = self.upper_chp_point[chp, point, t, k]
-                        cons_expr2 = -1 * self.upper_chp_point[chp, point, t, k] + 1
-                        self.dual_upper_chp_point_great_zero[chp, point, t, k] = Complementary_great(
+                        cons_expr1 = self.upper_chp_point[chp, p, t, k]
+                        cons_expr2 = -1 * self.upper_chp_point[chp, p, t, k] + 1
+                        self.dual_upper_chp_point_great_zero[chp, p, t, k] = Complementary_great(
                             cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                            'dual_upper_chp_point_great_zero' + str(t) + '_' + str(chp) + 'S' + str(k))
-                        self.dual_upper_chp_point_less_one[chp, point, t, k] = Complementary_great(
+                            'upper_chp_point_great_zero[' + str(chp) + ',' + str(p) + ',' + str(t) + ',' + str(k) + ']')
+                        self.dual_upper_chp_point_less_one[chp, p, t, k] = Complementary_great(
                             cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                            'dual_upper_chp_point_less_one' + str(t) + '_' + str(chp) + 'S' + str(k))
+                            'upper_chp_point_less_one[' + str(chp) + ',' + str(p) + ',' + str(t) + ',' + str(k) + ']')
 
             for chp in range(self.chp_lower_num):
-                for point in range(self.chp_point_num):
+                for p in range(self.chp_point_num):
                     for t in range(T):
-                        cons_expr1 = self.lower_chp_point[chp, point, t, k]
-                        cons_expr2 = -1 * self.lower_chp_point[chp, point, t, k] + 1
-                        self.dual_lower_chp_point_great_zero[chp, point, t, k] = Complementary_great(
+                        cons_expr1 = self.lower_chp_point[chp, p, t, k]
+                        cons_expr2 = -1 * self.lower_chp_point[chp, p, t, k] + 1
+                        self.dual_lower_chp_point_great_zero[chp, p, t, k] = Complementary_great(
                             cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                            'dual_lower_chp_point_great_zero' + str(t) + '_' + str(chp) + 'S' + str(k))
-                        self.dual_lower_chp_point_less_one[chp, point, t, k] = Complementary_great(
+                            'lower_chp_point_great_zero[' + str(chp) + ',' + str(p) + ',' + str(t) + ',' + str(k) + ']')
+                        self.dual_lower_chp_point_less_one[chp, p, t, k] = Complementary_great(
                             cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                            'dual_lower_chp_point_less_one' + str(t) + '_' + str(chp) + 'S' + str(k))
+                            'lower_chp_point_less_one[' + str(chp) + ',' + str(p) + ',' + str(t) + ',' + str(k) + ']')
 
             for heater in range(self.heat_heater_num):
                 for t in range(T):
@@ -448,7 +451,7 @@ class OneLayer:
                          self.heat_node_tempe_return[self.heater_connection_index[heater], t, k])
                     self.dual_heater_balance[heater, t, k] = Complementary_equal(
                         1 * cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_heater_balance' + str(t) + '_' + str(heater) + 'S' + str(k))
+                        'heater_balance[' + str(heater) + str(t) + ',' + str(k) + ']')
 
             for exchanger in range(self.heat_exchanger_num):
                 for t in range(T):
@@ -459,7 +462,7 @@ class OneLayer:
                                   self.heat_node_tempe_return[self.exchanger_connection_index[exchanger], t, k])
                     self.dual_exchanger_balance[exchanger, t, k] = Complementary_equal(
                         -1*cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_exchanger_balance' + str(t) + '_' + str(exchanger) + str(k))
+                        'exchanger_balance[' + str(exchanger) + str(t) + ',' + str(k) + ']')
 
             for line in range(self.heat_pipe_num):
                 for t in range(T):
@@ -469,10 +472,10 @@ class OneLayer:
                                  self.heat_node_tempe_return[self.heat_pipe_start_node_return[line], t, k]
                     _ = Complementary_equal(
                         -1 * cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_line_temp_start_supply_' + str(t) + '_' + str(line) + 'S' + str(k))
+                        'line_temp_start_supply[' + str(line) + str(t) + ',' + str(k) + ']')
                     _ = Complementary_equal(
                         -1 * cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_line_temp_start_return' + str(t) + '_' + str(line) + 'S' + str(k))
+                        'line_temp_start_return[' + str(line) + str(t) + ',' + str(k) + ']')
 
 
             for node in range(self.heat_node_num):      # mix constrains
@@ -490,9 +493,9 @@ class OneLayer:
                                  self.heat_node_tempe_return[node, t, k] * \
                                  (sum(self.heat_pipe_water_flow[np.where(self.heat_pipe_end_node_return == node)]))
                     _ = Complementary_equal(cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                                            'dual_mix_constraints_supply' + str(t) + '_' + str(node) + 'S' + str(k))
+                                            'mix_constraints_supply[' + str(node) + str(t) + ',' + str(k) + ']')
                     _ = Complementary_equal(cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                                            'dual_mix_constraints_return' + str(t) + '_' + str(node) + 'S' + str(k))
+                                            'mix_constraints_return[' + str(node) + str(t) + ',' + str(k) + ']')
 
             for line in range(self.heat_pipe_num):
                 for t in range(T):
@@ -503,9 +506,9 @@ class OneLayer:
                             (1 - 0.000 * (self.heat_pipe_length[line] * 1) / 1000) *
                             self.heat_pipe_start_tempe_return[line, t, k])
                     _ = Complementary_equal(cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                                            'dual_heat_loss_supply' + str(t) + '_' + str(line) + 'S' + str(k))
+                                            'heat_loss_supply[' + str(line) + str(t) + ',' + str(k) + ']')
                     _ = Complementary_equal(cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                                            'dual_heat_loss_return' + str(t) + '_' + str(line) + 'S' + str(k))
+                                            'heat_loss_return[' + str(line) + str(t) + ',' + str(k) + ']')
 
             for heater in range(self.heat_heater_num):
                 for t in range(T):
@@ -519,16 +522,16 @@ class OneLayer:
                                  self.heater_tempe_return_max[heater]
                     self.dual_heater_supply_min[heater, t, k] = Complementary_great(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_heater_supply_min' + str(t) + '_' + str(heater) + 'S' + str(k))
+                        'heater_supply_min[' + str(heater) + str(t) + ',' + str(k) + ']')
                     self.dual_heater_supply_max[heater, t, k] = Complementary_great(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_heater_supply_max' + str(t) + '_' + str(heater) + 'S' + str(k))
+                        'heater_supply_max[' + str(heater) + str(t) + ',' + str(k) + ']')
                     self.dual_heater_return_min[heater, t, k] = Complementary_great(
                         cons_expr3, self.model, self.DE[k], self.Dobj[k],
-                        'dual_heater_return_min' + str(t) + '_' + str(heater) + 'S' + str(k))
+                        'heater_return_min[' + str(heater) + str(t) + ',' + str(k) + ']')
                     self.dual_heater_return_max[heater, t, k] = Complementary_great(
                         cons_expr4, self.model, self.DE[k], self.Dobj[k],
-                        'dual_heater_return_max' + str(t) + '_' + str(heater) + 'S' + str(k))
+                        'heater_return_max[' + str(heater) + str(t) + ',' + str(k) + ']')
 
             for exchanger in range(self.heat_exchanger_num):
                 for t in range(T):
@@ -542,16 +545,16 @@ class OneLayer:
                                  self.exchanger_tempe_return_max[exchanger]
                     self.dual_exchanger_supply_min[exchanger, t, k] = Complementary_great(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_exchanger_supply_min' + str(t) + '_' + str(exchanger) + 'S' + str(k))
+                        'exchanger_supply_min[' + str(exchanger) + str(t) + ',' + str(k) + ']')
                     self.dual_exchanger_supply_max[exchanger, t, k] = Complementary_great(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_exchanger_supply_max' + str(t) + '_' + str(exchanger) + 'S' + str(k))
+                        'exchanger_supply_max[' + str(exchanger) + str(t) + ',' + str(k) + ']')
                     self.dual_exchanger_return_min[exchanger, t, k] = Complementary_great(
                         cons_expr3, self.model, self.DE[k], self.Dobj[k],
-                        'dual_exchanger_return_min' + str(t) + '_' + str(exchanger) + 'S' + str(k))
+                        'exchanger_return_min[' + str(exchanger) + str(t) + ',' + str(k) + ']')
                     self.dual_exchanger_return_max[exchanger, t, k] = Complementary_great(
                         cons_expr4, self.model, self.DE[k], self.Dobj[k],
-                        'dual_exchanger_return_max' + str(t) + '_' + str(exchanger) + 'S' + str(k))
+                        'exchanger_return_max[' + str(exchanger) + str(t) + ',' + str(k) + ']')
 
         # self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
 
@@ -573,7 +576,7 @@ class OneLayer:
                         #     self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
                     self.dual_node_gas_balance[node, t, k] = Complementary_equal(
                         1*cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'S_' + str(k))
+                        'node_gas_balance[' + str(node) + ',' + str(t) + ',' + str(k) + ']')
                     # self.model.addConstr(self.dual_node_gas_balance[node, t, k] >= 0)
 
             for well in range(self.well_upper_num):
@@ -608,10 +611,10 @@ class OneLayer:
                                  self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
                     self.dual_linepack_with_pressure[line, t, k] = Complementary_equal(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'gas_linepack_equation[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_linepack_with_time[line, t, k] = Complementary_equal(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'gas_linepack_with_time[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
             for line in self.gas_inactive_line:
                 for t in [T-1]:
@@ -622,10 +625,10 @@ class OneLayer:
                                  self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k]
                     self.dual_linepack_with_pressure[line, t, k] = Complementary_equal(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_gas_linepack_equation_line_' + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'gas_linepack_equation[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_linepack_with_time[line, t, k] = Complementary_equal(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_gas_linepack_with_time_line_' + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'gas_linepack_with_time[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
             # for line in self.gas_active_line:
             #     for t in range(T):
@@ -651,10 +654,10 @@ class OneLayer:
                     cons_expr2 = -1 * self.upper_gas_well_output[well, t, k] + self.well_upper_output_max[well]
                     self.dual_well_upper_output_min[well, t, k] = Complementary_great(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_upper_well_output_min_' + str(well) + '_t_' + str(t) + '_S_' + str(k))
+                        'upper_well_output_min[' + str(well) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_well_upper_output_max[well, t, k] = Complementary_great(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_upper_well_output_max_' + str(well) + '_t_' + str(t) + '_S_' + str(k))
+                        'upper_well_output_max[' + str(well) + ',' + str(t) + ',' + str(k) + ']')
 
             for well in range(self.well_lower_num):
                 for t in range(T):
@@ -662,10 +665,10 @@ class OneLayer:
                     cons_expr2 = -1 * self.lower_gas_well_output[well, t, k] + self.well_lower_output_max[well]
                     self.dual_well_lower_output_min[well, t, k] = Complementary_great(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_lower_well_output_min_' + str(well) + '_t_' + str(t) + '_S_' + str(k))
+                        'lower_well_output_min[' + str(well) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_well_lower_output_max[well, t, k] = Complementary_great(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_lower_well_output_max_' + str(well) + '_t_' + str(t) + '_S_' + str(k))
+                        'lower_well_output_max[' + str(well) + ',' + str(t) + ',' + str(k) + ']')
 
             for node in range(self.gas_node_num):
                 for t in range(T):
@@ -673,10 +676,10 @@ class OneLayer:
                     cons_expr2 = self.gas_node_pressure_max[node] - self.gas_node_pressure[node, t, k]
                     self.dual_gas_node_pressure_min[node, t, k] = Complementary_great(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_node_pressure_min_' + str(node) + '_t_' + str(t) + '_S_' + str(k))
+                        'node_pressure_min[' + str(node) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_gas_node_pressure_max[node, t, k] = Complementary_great(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_node_pressure_max_' + str(node) + '_t_' + str(t) + '_S_' + str(k))
+                        'node_pressure_max[' + str(node) + ',' + str(t) + ',' + str(k) + ']')
 
             # for line in range(self.gas_line_num):
             #     for t in range(T):
@@ -694,23 +697,23 @@ class OneLayer:
                     cons_expr4 = -1 * self.gas_flow_out[line, t, k] + self.gas_flow_out_max[line]
                     self.dual_gas_flow_in_min[line, t, k]  = Complementary_great(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_gas_flow_in_min'  + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'gas_flow_in_min['  + str(line) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_gas_flow_in_max[line, t, k]  = Complementary_great(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                        'dual_gas_flow_in_max'  + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'gas_flow_in_max['  + str(line) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_gas_flow_out_min[line, t, k] = Complementary_great(
                         cons_expr3, self.model, self.DE[k], self.Dobj[k],
-                        'dual_gas_flow_out_min' + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'gas_flow_out_min[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
                     self.dual_gas_flow_out_max[line, t, k] = Complementary_great(
                         cons_expr4, self.model, self.DE[k], self.Dobj[k],
-                        'dual_gas_flow_out_max' + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'gas_flow_out_max[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
             #
             for line in range(self.gas_line_num):
                 for t in range(T):
                     cons_expr1 = self.pccp_relax[line, t, k]
                     self.dual_pccp_relax_great_zero[line, t, k] = Complementary_great(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'dual_pccp_relax_great_zero' + str(line) + '_t_' + str(t) + '_S_' + str(k))
+                        'pccp_relax_great_zero[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
 
             self.mearsurement = []
@@ -722,7 +725,7 @@ class OneLayer:
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'weymouth_left_aux[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
-                    MM = 1e1
+                    MM = 1e2
                     self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], \
                     measurement = Complementary_soc(
                         [1, sqrt(self.gas_weymouth[line])],
@@ -788,7 +791,7 @@ class OneLayer:
                         Complementary_equal_plus(cons_expr2, self.model, self.DE[k], self.Dobj[k],
                                                  'weymouth_right_aux2[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
-                    MM = 1e1
+                    MM = 1e2
                     # 构建SOC 约束
                     # 左对偶变量, 右对偶变量,  原SOC约束,      对偶SOC约束,      互补为零约束,     lagrange项
                     dual_left, dual_right, constr_original, constr_dual, var_line, constrain_line, measurement = \
@@ -833,7 +836,9 @@ class OneLayer:
         for chp in range(self.chp_lower_num):
             for time in range(T):
                 for k in range(K):
-                    lower_objs.append(self.well_lower_cost[self.chp_lower_connection_well_index[chp]] * (self.lower_chp_heat_output[chp, time, k] * self.chp_lower_coeff_h_1[chp]) * 1)#self.upper_chp_gas_quoted_price[chp, time])
+                    lower_objs.append(self.well_lower_cost[self.chp_lower_connection_well_index[chp]] *
+                                      (self.lower_chp_heat_output[chp, time, k] * self.chp_lower_coeff_h_1[chp]) * 1)
+                    #self.upper_chp_gas_quoted_price[chp, time])
         # ！！！！？？？？？
         # Lower CHP : 耗气量 * 节点边际气价
         # for chp in range(self.chp_lower_num):
@@ -1138,8 +1143,9 @@ class OneLayer:
                     OE[k].append(-1 * self.dual_upper_chp_point_sum_one[chp, t, k])
             OE[k] = sum(OE[k])
 
+        Dobj = [0 for i in range(K)]
         for k in range(K):
-            self.Dobj[k] = sum(self.Dobj[k])
+            Dobj[k] = sum(self.Dobj[k])
 
         ## upper cost
         UC = [[] for i in range(K)]
@@ -1157,7 +1163,7 @@ class OneLayer:
             UC[k] = sum(UC[k])
 
         for k in range(K):
-            self.obj_k.append((self.Dobj[k] - LC[k] + OE[k] - UC[k]) * (-1))
+            self.obj_k.append((Dobj[k] - LC[k] + OE[k] - UC[k]) * (-1))
 
     def optimize(self, distribution):
         self.model.setParam("IntegralityFocus", 1)

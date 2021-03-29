@@ -413,10 +413,10 @@ class OneLayer:
                         cons_expr2 = -1 * self.upper_chp_point[chp, point, t, k] + 1
                         self.dual_upper_chp_point_great_zero[chp, point, t, k] = Complementary_great(
                             cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                            'dual_upper_chp_point_great_zero' + str(t) + '_' + str(chp) + 'S' + str(k))
+                            'dual_upper_chp_point_great_zero' + str(t) + '_' + str(chp) + 'S' + str(k) + str(point))
                         self.dual_upper_chp_point_less_one[chp, point, t, k] = Complementary_great(
                             cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                            'dual_upper_chp_point_less_one' + str(t) + '_' + str(chp) + 'S' + str(k))
+                            'dual_upper_chp_point_less_one' + str(t) + '_' + str(chp) + 'S' + str(k) + str(point))
 
             for chp in range(self.chp_lower_num):
                 for point in range(self.chp_point_num):
@@ -425,10 +425,10 @@ class OneLayer:
                         cons_expr2 = -1 * self.lower_chp_point[chp, point, t, k] + 1
                         self.dual_lower_chp_point_great_zero[chp, point, t, k] = Complementary_great(
                             cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                            'dual_lower_chp_point_great_zero' + str(t) + '_' + str(chp) + 'S' + str(k))
+                            'dual_lower_chp_point_great_zero' + str(t) + '_' + str(chp) + 'S' + str(k) + str(point))
                         self.dual_lower_chp_point_less_one[chp, point, t, k] = Complementary_great(
                             cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                            'dual_lower_chp_point_less_one' + str(t) + '_' + str(chp) + 'S' + str(k))
+                            'dual_lower_chp_point_less_one' + str(t) + '_' + str(chp) + 'S' + str(k) + str(point))
 
             for heater in range(self.heat_heater_num):
                 for t in range(T):
@@ -557,15 +557,15 @@ class OneLayer:
             for node in range(self.gas_node_num):
                 for t in range(T):
                     cons_expr1 = \
-                        sum(self.upper_gas_well_output[  np.where(self.well_upper_connection_index    == node), t, k].flatten()) +  \
-                        sum(self.lower_gas_well_output[  np.where(self.well_lower_connection_index    == node), t, k].flatten()) +  \
-                        sum(self.gas_flow_out[           np.where(self.gas_pipe_end_node              == node), t, k].flatten()) -  \
-                        sum(self.gas_flow_in[            np.where(self.gas_pipe_start_node            == node), t, k].flatten()) -   \
-                        sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten()) #-  \
-                        # sum((self.upper_chp_heat_output[ np.where(self.chp_upper_connection_gas_index == node), t, k] *
-                        #     self.chp_upper_coeff_h_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
-                        # sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
-                        #     self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
+            sum(self.upper_gas_well_output[  np.where(self.well_upper_connection_index    == node), t, k].flatten()) +  \
+            sum(self.lower_gas_well_output[  np.where(self.well_lower_connection_index    == node), t, k].flatten()) +  \
+            sum(self.gas_flow_out[           np.where(self.gas_pipe_end_node              == node), t, k].flatten()) -  \
+            sum(self.gas_flow_in[            np.where(self.gas_pipe_start_node            == node), t, k].flatten()) -   \
+            sum(self.gas_load[               np.where(self.gas_load_connection_index      == node), t   ].flatten()) -  \
+            sum((self.upper_chp_heat_output[ np.where(self.chp_upper_connection_gas_index == node), t, k] *
+                            self.chp_upper_coeff_h_1[    np.where(self.chp_upper_connection_gas_index == node)      ]).flatten()) - \
+            sum((self.lower_chp_heat_output[ np.where(self.chp_lower_connection_gas_index == node), t, k] *
+                            self.chp_lower_coeff_h_1[    np.where(self.chp_lower_connection_gas_index == node)      ]).flatten())
                     self.dual_node_gas_balance[node, t, k] = Complementary_equal(
                         1*cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'dual_node_gas_balance_time_' + str(t) + '_node_' + str(node) + 'S_' + str(k))
