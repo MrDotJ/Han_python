@@ -1,7 +1,7 @@
 import gurobipy as gurobi
 import numpy as np
 
-M = 1e3
+M = 1e4
 N = 10
 
 INFINITY = gurobi.GRB.INFINITY

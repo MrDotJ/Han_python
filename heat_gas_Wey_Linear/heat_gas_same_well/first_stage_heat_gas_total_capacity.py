@@ -876,7 +876,7 @@ class OneLayer:
                 )
 
     # 上层的目标函数， 这里 是 非线性的 直接 => 产量 * 边际价格 - 成本，    这里的一个问题是， chp的天然气 需要 按节点边际气价 付费吗？
-    def build_upper_objective(self):  #
+    def build_upper_objective_(self):  #
         obj_k = []
         for k in range(K):
             expected_cost = []
@@ -1022,7 +1022,7 @@ class OneLayer:
     #     self.equivalent_cost = obj_k_p
     #     self.equivalent_revenue = obj_k_h
 
-    def build_upper_objective_(self):
+    def build_upper_objective(self):
         # my_expr = MyExpr(self.lower_objective +
         #                  self.dual_expression_basic)
         # # 对下层的 所有 原变量 求导， 注意要包含 pccp 项

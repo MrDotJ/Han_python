@@ -15,8 +15,9 @@ def do_main():
     first_layer.build_heat_system()
     first_layer.build_gas_system()
     first_layer.build_power_system_original_and_dual_constraints()
-    first_layer.build_gas_system_original_and_dual_constrains()
     first_layer.build_heat_system_original_and_dual_constraints()
+    first_layer.build_gas_system_original_and_dual_constrains()
+
 
     # build upper bid price constraints
     first_layer.build_upper_constraints()
