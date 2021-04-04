@@ -1,8 +1,8 @@
 import gurobipy as gurobi
 import numpy as np
 
-M = 1e3
-N = 10
+M = 1e4
+N = 3
 
 INFINITY = gurobi.GRB.INFINITY
 INF = INFINITY
@@ -87,10 +87,10 @@ def Complementary_soc111(left_coeff, left_var, right_coeff, right_var, model, du
     left_var_length = len(left_coeff)
     right_var_length = len(right_coeff)
     # 左侧对偶变量
-    dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
+    dual_left = model.addVars(left_var_length, lb=-1*INFINITY*0, ub=INFINITY*0,
                               name=dual_var_name + '_dual_left')
     # 右侧对偶变量
-    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
+    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY*0,
                                name=dual_var_name + '_dual_right')
     # 添加原锥约束
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
@@ -109,7 +109,7 @@ def Complementary_soc111(left_coeff, left_var, right_coeff, right_var, model, du
                                     for i in range(left_var_length)]) + \
                    gurobi.quicksum([right_coeff[i] * right_coeff[i] * right_var[i] * dual_right[i]
                                     for i in range(right_var_length)])
-    model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
+    # model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
 
     # # =============== deal with lagrange sum equal zero ==============
 
@@ -117,7 +117,7 @@ def Complementary_soc111(left_coeff, left_var, right_coeff, right_var, model, du
     dual_var = tonp(dual_left).tolist() + tonp(dual_right).tolist()
     coeff = left_coeff + right_coeff
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
-    measurement = [lagrange_sum]
+    measurement = [lagrange_sum, dual_left, dual_right]
 
     # # =============== END
 
@@ -130,10 +130,10 @@ def Complementary_soc(left_coeff, left_var, right_coeff, right_var, model, dual_
     right_var_length = len(right_coeff)
     # 左侧对偶变量
     dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
-                              name=dual_var_name + '_dual_left')
+                              name=dual_var_name + '_left')
     # 右侧对偶变量
     dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
-                               name=dual_var_name + '_dual_right')
+                               name=dual_var_name + '_right')
     # 添加原锥约束
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
                                  for i in range(left_var_length)])
@@ -204,10 +204,11 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     left_var_length = len(left_coeff)
     right_var_length = len(right_coeff)
     # 左侧对偶变量
-    dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
+    dual_left = model.addVars(left_var_length, lb=-1*INFINITY*0, ub=INFINITY*0,
                               name=dual_var_name + '_dual_left')
+    # model.addConstr(dual_left[0] == 0)
     # 右侧对偶变量
-    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
+    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY*0,
                                name=dual_var_name + '_dual_right')
     # 添加原锥约束
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
@@ -221,6 +222,8 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     dual_expr_right = gurobi.quicksum([right_coeff[i] * right_coeff[i] * dual_right[i] * dual_right[i]
                                        for i in range(right_var_length)])
     constr_dual = model.addConstr(dual_expr_left <= dual_expr_right, name=dual_var_name + '[Dual]')
+    # constr_dual = model.addConstr(dual_left[1] <= dual_right[0], name=dual_var_name + '[Dual]')
+    # constr_dual = model.addConstr(dual_left[1] >= -1 * dual_right[0], name=dual_var_name + '[Dual]')
     # 添加互补约束
     lagrange_sum = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * dual_left[i]
                                     for i in range(left_var_length)]) + \
@@ -237,7 +240,7 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     coeff = left_coeff + right_coeff
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
     var_linear.append(w)
-    measurement = []
+    measurement = [lagrange_sum, dual_left, dual_right]
     for i in range(left_var_length + right_var_length):
         wij = w[i]
         binary = model.addVars(N, vtype=gurobi.GRB.BINARY)
@@ -270,7 +273,7 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     constrain_linear.append(
         model.addConstr(sum([coeff[i]**2 * w[i] for i in range(left_var_length + right_var_length)]) == 0,
                         name='[Lagrange]' + dual_var_name))
-    # # =============== END
+    # =============== END
 
     dual_expression.append(-1 * lagrange_sum)
     dual_obj.append(0)
@@ -283,7 +286,7 @@ def Complementary_soc_plus111(left_coeff, left_var, right_coeff, right_var, mode
     dual_left = model.addVars(left_var_length, lb=-1*INFINITY, ub=INFINITY,
                               name=dual_var_name + '_dual_left')
     # 右侧对偶变量
-    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY,
+    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY*0,
                                name=dual_var_name + '_dual_right')
     # 添加原锥约束
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
@@ -302,7 +305,7 @@ def Complementary_soc_plus111(left_coeff, left_var, right_coeff, right_var, mode
                                     for i in range(left_var_length)]) + \
                    gurobi.quicksum([right_coeff[i] * right_coeff[i] *  right_var[i] * dual_right[i]
                                     for i in range(right_var_length)])
-    complementary_constr = model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
+    # complementary_constr = model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
 
     # # =============== deal with lagrange sum equal zero ==============
     # xi is dual variables, xj is original variables
@@ -313,7 +316,7 @@ def Complementary_soc_plus111(left_coeff, left_var, right_coeff, right_var, mode
     coeff = left_coeff + right_coeff
     w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
     var_linear.append(w)
-    measurement = [complementary_constr]
+    measurement = [lagrange_sum, dual_left, dual_right]
     # # =============== END
 
     dual_expression.append(-1 * lagrange_sum)
