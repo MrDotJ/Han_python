@@ -560,7 +560,6 @@ class OneLayer:
     def build_gas_system_original_and_dual_constrains(self):
         self.DAAA = sum(self.DE[0])
         dual_expr = []
-
         for k in range(K):
             for node in range(self.gas_node_num):
                 for t in range(T):
@@ -578,7 +577,7 @@ class OneLayer:
                         1*cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'node_gas_balance[' + str(node) + ',' + str(t) + ',' + str(k) + ']')
                     # self.model.addConstr(self.dual_node_gas_balance[node, t, k] >= 0)
-
+        self.D4 = sum(self.DE[0])
         for k in range(K):
             for well in range(self.well_upper_num):
                 for t in range(T):
@@ -602,7 +601,7 @@ class OneLayer:
                     _ = Complementary_great(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'dual_lower_well_capacity_time_' + str(t) + '_well_' + str(well) + '_S_' + str(k))
-
+        self.D3 = sum(self.DE[0])
         for k in range(K):
             for line in self.gas_inactive_line:
                 for t in range(0, T-1):
@@ -649,7 +648,7 @@ class OneLayer:
             #             Complementary_great(cons_expr1, self.model,
             #                                 'dual_com_pressure_' + str(compressor) + '_t_' + str(t) + '_S_' + str(k))
             #         dual_expr.append(expr1)
-
+        self.D2 = sum(self.DE[0])
         for k in range(K):
             for well in range(self.well_upper_num):
                 for t in range(T):
@@ -672,6 +671,7 @@ class OneLayer:
                     self.dual_well_lower_output_max[well, t, k] = Complementary_great(
                         cons_expr2, self.model, self.DE[k], self.Dobj[k],
                         'lower_well_output_max[' + str(well) + ',' + str(t) + ',' + str(k) + ']')
+        self.D1 = sum(self.DE[0])
 
         for k in range(K):
             for node in range(self.gas_node_num):
@@ -692,7 +692,7 @@ class OneLayer:
             #             Complementary_great(cons_expr1, self.model,
             #                                 'dual_gas_flow_great_zero_' + str(line) + '_t_' + str(t) + '_S_' + str(k))
             #         dual_expr.append(expr1)
-
+        self.D7 = sum(self.DE[0])
         for k in range(K):
             for line in range(self.gas_line_num):
                 for t in range(T):
@@ -713,7 +713,7 @@ class OneLayer:
                         cons_expr4, self.model, self.DE[k], self.Dobj[k],
                         'gas_flow_out_max[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
             #
-
+        self.D8 = sum(self.DE[0])
         for k in range(K):
             for line in range(self.gas_line_num):
                 for t in range(T):
@@ -733,14 +733,13 @@ class OneLayer:
                     self.dual_weymouth_aux_left[line, t, k] = Complementary_equal(
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'weymouth_left_aux[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
-
         self.DCCC = sum(self.DE[0])
         for k in range(K):
             for line in self.gas_inactive_line:
                 for t in range(T):
                     MM = 1e1
                     self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], \
-                    measurement = Complementary_soc111(
+                    measurement = Complementary_soc(
                         [1, sqrt(self.gas_weymouth[line])],
                         [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
                         [sqrt(self.gas_weymouth[line])],
@@ -808,7 +807,7 @@ class OneLayer:
                     # 构建SOC 约束
                     # 左对偶变量, 右对偶变量,  原SOC约束,      对偶SOC约束,      互补为零约束,     lagrange项
                     dual_left, dual_right, constr_original, constr_dual, var_line, constrain_line, measurement = \
-                        Complementary_soc_plus111(
+                        Complementary_soc_plus(
                         [2 * d, 1],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
                          self.aux_weymouth_right_1[line, t, k]],
@@ -1000,8 +999,8 @@ class OneLayer:
 
     def optimize(self, distribution):
 
-        # for k in range(K):
-        #     self.model.addConstr(self.DE[k] == self.lower_objective)
+        for k in range(K):
+            self.model.addConstr(self.DE[k] == self.lower_objective)
 
         self.model.setParam("IntegralityFocus", 1)
         self.model.setParam("NonConvex", 2)

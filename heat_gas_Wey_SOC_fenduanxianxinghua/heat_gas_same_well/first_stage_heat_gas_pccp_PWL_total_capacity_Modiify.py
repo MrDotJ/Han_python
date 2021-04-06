@@ -1,4 +1,5 @@
-from resource.utility_soc_PWL import *
+
+from resource.cao import *
 from resource.config4_with_gas import T, K
 from math import sqrt
 
@@ -244,6 +245,8 @@ class OneLayer:
         self.dual_gas_flow_out_max                          = None
         self.dual_pccp_relax_great_zero                     = None
         self.dual_well_upper_capacity                       = None
+        self.gas_node_pressure_binary                       = None
+        self.aux_weymouth_left_binary                       = None
 
         self.all_lower_level_vars                           = []
         self.obj_k                                          = []
@@ -368,6 +371,8 @@ class OneLayer:
         self.dual_exchanger_return_min          = np.empty((self.heat_exchanger_num,                T, K, ), dtype=object)
         self.dual_exchanger_return_max          = np.empty((self.heat_exchanger_num,                T, K, ), dtype=object)
         self.dual_heater_balance                = np.empty((self.heat_heater_num,                   T, K, ), dtype=object)
+        self.gas_node_pressure_binary           = np.empty((self.gas_node_num,                      T, K, ), dtype=object)
+        self.aux_weymouth_left_binary           = np.empty((self.gas_line_num,                      T, K, ), dtype=object)
 
         self.all_lower_level_vars.extend(self.upper_chp_point.flatten().tolist())
         self.all_lower_level_vars.extend(self.lower_chp_point.flatten().tolist())
@@ -725,6 +730,7 @@ class OneLayer:
 
         self.mearsurement = []
         self.DBBB = sum(self.DE[0])
+
         for k in range(K):
             for line in self.gas_inactive_line:
                 for t in range(T):
@@ -734,11 +740,46 @@ class OneLayer:
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'weymouth_left_aux[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
-        self.DCCC = sum(self.DE[0])
+        NNN = 15
+
+        # for k in range(K):
+        #     for node in range(self.gas_node_num):
+        #         for t in range(T):
+        #             binary = self.model.addVars(NNN, vtype=gurobi.GRB.BINARY)
+        #             self.gas_node_pressure_binary[node, t, k] = tonp(binary)
+        #             pressure_min = self.gas_node_pressure_min[node]
+        #             pressure_max = self.gas_node_pressure_max[node]
+        #             delta = (pressure_max - pressure_min) / (pow(2, NNN))
+        #             equal_expr = pressure_min + sum([pow(2, n) * binary[n] * delta for n in range(NNN)])
+        #             self.model.addConstr(self.gas_node_pressure[node, t, k] == equal_expr)
+        #
+        # for k in range(K):
+        #     for line in range(self.gas_line_num):
+        #         for t in range(T):
+        #             binary = self.model.addVars(NNN, vtype=gurobi.GRB.BINARY)
+        #             self.aux_weymouth_left_binary[line, t, k] = tonp(binary)
+        #             aux_min = (self.gas_flow_in_min[line] + self.gas_flow_out_min[line])/2
+        #             aux_max = (self.gas_flow_out_max[line] + self.gas_flow_out_max[line])/2
+        #             delta = (aux_max - aux_min) / (pow(2, NNN))
+        #             equal_expr = aux_min + sum([pow(2, n) * binary[n] * delta for n in range(NNN)])
+        #             self.model.addConstr(self.aux_weymouth_left[line, t, k] == equal_expr)
+
         for k in range(K):
             for line in self.gas_inactive_line:
                 for t in range(T):
-                    MM = 1e1
+                    u = [
+                        self.aux_weymouth_left_binary[line, t, k],
+                        self.gas_node_pressure_binary[self.gas_pipe_end_node[line], t, k],
+                        self.gas_node_pressure_binary[self.gas_pipe_start_node[line], t, k]
+                    ]
+                    original_var_min = [self.gas_flow_in_min[line] + self.gas_flow_out_min[line],
+                                        self.gas_node_pressure_min[self.gas_pipe_end_node[line]],
+                                        self.gas_node_pressure_min[self.gas_pipe_start_node[line]]]
+                    original_var_max = [self.gas_flow_in_max[line] + self.gas_flow_out_max[line],
+                                        self.gas_node_pressure_max[self.gas_pipe_end_node[line]],
+                                        self.gas_node_pressure_max[self.gas_pipe_start_node[line]]]
+                    dual_var_min = [-10, -10, 0]
+                    dual_var_max = [10, 10, 10]
                     self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], \
                     measurement = Complementary_soc111(
                         [1, sqrt(self.gas_weymouth[line])],
@@ -747,12 +788,15 @@ class OneLayer:
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
                         self.model, self.DE[k], self.Dobj[k],
                         'weymouth_left_soc[' + str(line) + ',' + str(t) + ',' + str(k) + ']',
-                        [-200, -200, -200],
-                        [200, 200, 200],
-                        [-MM, -MM, -MM],
-                        [MM, MM, MM]
+                        u,
+                        original_var_min,
+                        original_var_max,
+                        dual_var_min,
+                        dual_var_max,
+                        NNN
                         )
                     self.mearsurement.append(measurement)
+        # for k in range(K):
         #     for line in self.gas_inactive_line:
         #         for t in range(T):
         #             cons_expr1 = self.gas_weymouth[line] * (
@@ -766,7 +810,7 @@ class OneLayer:
 
     # 每次迭代， 更新 PCCP 部分
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
-        # return
+        return
         # for k in range(K):
         #     self.Dobj[k].extend([self.old_dual_obj[i] * (-1) for i in range(len(self.old_dual_obj))])
         self.old_dual_obj = []

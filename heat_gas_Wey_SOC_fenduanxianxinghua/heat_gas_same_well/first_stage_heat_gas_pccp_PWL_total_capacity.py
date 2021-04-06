@@ -753,6 +753,7 @@ class OneLayer:
                         [MM, MM, MM]
                         )
                     self.mearsurement.append(measurement)
+        # for k in range(K):
         #     for line in self.gas_inactive_line:
         #         for t in range(T):
         #             cons_expr1 = self.gas_weymouth[line] * (
@@ -766,7 +767,6 @@ class OneLayer:
 
     # 每次迭代， 更新 PCCP 部分
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
-        # return
         # for k in range(K):
         #     self.Dobj[k].extend([self.old_dual_obj[i] * (-1) for i in range(len(self.old_dual_obj))])
         self.old_dual_obj = []
