@@ -4,8 +4,10 @@ from resource.config4_with_gas import T, K
 from math import sqrt
 
 
-class OneLayer:
-    def __init__(self, power_system, heat_system, chp_system, gas_system):
+class OneLayer2:
+    def __init__(self, power_system, heat_system, chp_system, gas_system, segment_num):
+        self.segment_num = segment_num
+
         self.chp_lower_connection_well_index = gas_system['lower_chp_connection_well_index']
         self.chp_upper_connection_well_index = gas_system['upper_chp_connection_well_index']
 
@@ -275,20 +277,28 @@ class OneLayer:
             tonp( self.model.addVars(self.well_lower_num,  T, K, name='lower_well_output',     lb=-1 * INF, ub=INF ) )
         self.gas_node_pressure                    = \
             tonp( self.model.addVars(self.gas_node_num,    T, K, name='gas_node_pressure',     lb=-1 * INF, ub=INF ) )
+        self.gas_node_pressure_square             = \
+            tonp( self.model.addVars(self.gas_node_num,    T, K, name='gas_node_pressure_square', lb=-1 * INF, ub=INF))
         self.gas_flow_in                          = \
             tonp( self.model.addVars(self.gas_line_num,    T, K, name='gas_flow_in',           lb=-1 * INF, ub=INF ) )
         self.gas_flow_out                         = \
             tonp( self.model.addVars(self.gas_line_num,    T, K, name='gas_flow_out',          lb=-1 * INF, ub=INF ) )
         self.aux_weymouth_left                    = \
             tonp( self.model.addVars(self.gas_line_num,    T, K, name='weymouth_left_aux',     lb=-1 * INF, ub=INF ) )
+        self.gas_line_flow_square                 = \
+            tonp( self.model.addVars(self.gas_line_num,    T, K, name='gas_flow_square',       lb=-1 * INF, ub=INF))
         self.aux_weymouth_right_1                 = \
             tonp( self.model.addVars(self.gas_line_num,    T, K, name='weymouth_right_aux1',   lb=-1 * INF, ub=INF ) )
         self.aux_weymouth_right_2                 = \
             tonp( self.model.addVars(self.gas_line_num,    T, K, name='weymouth_right_aux2',   lb=-1 * INF, ub=INF ) )
-        self.pccp_relax                           = \
-            tonp( self.model.addVars(self.gas_line_num,    T, K, name='pccp_relax',            lb=-1 * INF, ub=INF ) )
+        # self.pccp_relax                           = \
+        #     tonp( self.model.addVars(self.gas_line_num,    T, K, name='pccp_relax',            lb=-1 * INF, ub=INF ) )
         self.gas_linepack                         = \
             tonp( self.model.addVars(self.gas_line_num,    T, K, name='gas_linepack',          lb=-1 * INF, ub=INF ) )
+        self.pressure_segment                     = \
+            tonp( self.model.addVars(self.gas_node_num, self.segment_num, T, K, name='pre_segment', lb=-1*INF, ub=INF))
+        self.gas_line_flow_segment                = \
+            tonp( self.model.addVars(self.gas_line_num, self.segment_num, T, K, name='flow_segment', lb=-1*INF, ub=INF))
 
         self.dual_node_gas_balance                = np.empty((self.gas_node_num,           T, K, ), dtype=object)
         self.dual_linepack_with_pressure          = np.empty((self.gas_line_num,           T, K, ), dtype=object)
@@ -316,13 +326,16 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.upper_gas_well_output.flatten().tolist())
         self.all_lower_level_vars.extend(self.lower_gas_well_output.flatten().tolist())
         self.all_lower_level_vars.extend(self.gas_node_pressure.flatten().tolist())
+        self.all_lower_level_vars.extend(self.gas_node_pressure_square.flatten().tolist())
         self.all_lower_level_vars.extend(self.gas_flow_in.flatten().tolist())
         self.all_lower_level_vars.extend(self.gas_flow_out.flatten().tolist())
         self.all_lower_level_vars.extend(self.aux_weymouth_left.flatten().tolist())
+        self.all_lower_level_vars.extend(self.gas_line_flow_square.flatten().tolist())
         self.all_lower_level_vars.extend(self.aux_weymouth_right_1.flatten().tolist())
         self.all_lower_level_vars.extend(self.aux_weymouth_right_2.flatten().tolist())
-        self.all_lower_level_vars.extend(self.pccp_relax          .flatten().tolist())
         self.all_lower_level_vars.extend(self.gas_linepack.flatten().tolist())
+        self.all_lower_level_vars.extend(self.pressure_segment.flatten().tolist())
+        self.all_lower_level_vars.extend(self.gas_line_flow_segment.flatten().tolist())
 
     def build_heat_system(self):
         self.upper_chp_heat_quoted_price_tuple_dict = \
@@ -562,10 +575,7 @@ class OneLayer:
         # self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
 
     # 构建 气网 部分
-    def build_gas_system_original_and_dual_constrains(self):
-        self.DAAA = sum(self.DE[0])
-        dual_expr = []
-
+    def build_gas_system_original_and_dual_constrains(self, binary_pressure, binary_flow):
         for k in range(K):
             for node in range(self.gas_node_num):
                 for t in range(T):
@@ -717,19 +727,6 @@ class OneLayer:
                     self.dual_gas_flow_out_max[line, t, k] = Complementary_great(
                         cons_expr4, self.model, self.DE[k], self.Dobj[k],
                         'gas_flow_out_max[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
-            #
-
-        for k in range(K):
-            for line in range(self.gas_line_num):
-                for t in range(T):
-                    cons_expr1 = self.pccp_relax[line, t, k]
-                    self.dual_pccp_relax_great_zero[line, t, k] = Complementary_great(
-                        cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                        'pccp_relax_great_zero[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
-
-
-        self.mearsurement = []
-        self.DBBB = sum(self.DE[0])
 
         for k in range(K):
             for line in self.gas_inactive_line:
@@ -740,179 +737,83 @@ class OneLayer:
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'weymouth_left_aux[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
-        NNN = 15
-
-        # for k in range(K):
-        #     for node in range(self.gas_node_num):
-        #         for t in range(T):
-        #             binary = self.model.addVars(NNN, vtype=gurobi.GRB.BINARY)
-        #             self.gas_node_pressure_binary[node, t, k] = tonp(binary)
-        #             pressure_min = self.gas_node_pressure_min[node]
-        #             pressure_max = self.gas_node_pressure_max[node]
-        #             delta = (pressure_max - pressure_min) / (pow(2, NNN))
-        #             equal_expr = pressure_min + sum([pow(2, n) * binary[n] * delta for n in range(NNN)])
-        #             self.model.addConstr(self.gas_node_pressure[node, t, k] == equal_expr)
-        #
-        # for k in range(K):
-        #     for line in range(self.gas_line_num):
-        #         for t in range(T):
-        #             binary = self.model.addVars(NNN, vtype=gurobi.GRB.BINARY)
-        #             self.aux_weymouth_left_binary[line, t, k] = tonp(binary)
-        #             aux_min = (self.gas_flow_in_min[line] + self.gas_flow_out_min[line])/2
-        #             aux_max = (self.gas_flow_out_max[line] + self.gas_flow_out_max[line])/2
-        #             delta = (aux_max - aux_min) / (pow(2, NNN))
-        #             equal_expr = aux_min + sum([pow(2, n) * binary[n] * delta for n in range(NNN)])
-        #             self.model.addConstr(self.aux_weymouth_left[line, t, k] == equal_expr)
-
-        self.gas_node_pressure_square = np.empty((self.gas_node_num, T, K), dtype=object)
         for k in range(K):
             for node in range(self.gas_node_num):
                 for t in range(T):
-                    gas_node_pressure_square = self.model.addVar()
-                    self.gas_node_pressure_square[node, t, k] = gas_node_pressure_square
-                    self.model.addGenConstrPWL(self.gas_node_pressure[node, t, k],
-                                               gas_node_pressure_square,
-                                               np.linspace(self.gas_node_pressure_min[node],
-                                                           self.gas_node_pressure_max[node],
-                                                           5),
-                                               np.square(np.linspace(self.gas_node_pressure_min[node],
-                                                                     self.gas_node_pressure_max[node],
-                                                                     5)))
-        self.gas_line_flow_square = np.empty((self.gas_line_num, T, K), dtype=object)
-        for k in range(K):
-            for line in range(self.gas_line_num):
-                for t in range(T):
-                    gas_line_flow_square = self.model.addVar()
-                    self.gas_line_flow_square[line, t, k] = gas_line_flow_square
-                    self.model.addGenConstrPWL(
-                        self.aux_weymouth_left[line, t, k],
-                        gas_line_flow_square,
-                        np.linspace(
-                            (self.gas_flow_in_min[line] + self.gas_flow_out_min[line]) / 2,
-                            (self.gas_flow_in_max[line] + self.gas_flow_out_max[line]) / 2,
-                            5
-                        ),
-                        np.square(np.linspace(
-                            (self.gas_flow_in_min[line] + self.gas_flow_out_min[line]) / 2,
-                            (self.gas_flow_in_max[line] + self.gas_flow_out_max[line]) / 2,
-                            5
-                        ))
+                    x_value = np.linspace(
+                        self.gas_node_pressure_min[node],
+                        self.gas_node_pressure_max[node],
+                        self.segment_num)
+                    y_value = np.square( np.linspace(
+                        self.gas_node_pressure_min[node],
+                        self.gas_node_pressure_max[node],
+                        self.segment_num))
+                    cons_expr1 = self.gas_node_pressure[node, t, k] - sum(
+                        [self.pressure_segment[node, seg, t, k] * x_value[seg] for seg in range(self.segment_num)]
                     )
+                    cons_expr2 = self.gas_node_pressure_square[node, t, k] - sum(
+                        [self.pressure_segment[node, seg, t, k] * y_value[seg] for seg in range(self.segment_num)]
+                    )
+                    cons_expr3 = sum(self.pressure_segment[node, :, t, k]) - 1
+                    Complementary_equal(cons_expr1, self.model, self.DE[k], self.Dobj[k],
+                                        'pressure_square_x[' + str(node) + ',' + str(t) + ',' + str(k) + ']')
+                    Complementary_equal(cons_expr2, self.model, self.DE[k], self.Dobj[k],
+                                        'pressure_square_y[' + str(node)  + ',' + str(t) + ',' + str(k) + ']')
+                    Complementary_equal(cons_expr3, self.model, self.DE[k], self.Dobj[k],
+                                        'pressure_square_sum[' + str(node) + ',' + str(t) + ',' + str(k) + ']')
+                    for seg in range(self.segment_num):
+                        cons_expr4 = self.pressure_segment[node, seg, t, k]
+                        cons_expr5 = binary_pressure[node, seg, t, k] - self.pressure_segment[node, seg, t, k]
+                        Complementary_great(cons_expr4, self.model, self.DE[k], self.Dobj[k],
+                                            'p_s_sl[' + str(node) + ',' + str(seg) + ',' + str(t) + ',' + str(k) + ']')
+                        Complementary_great(cons_expr5, self.model, self.DE[k], self.Dobj[k],
+                                            'p_s_sg[' + str(node) + ',' + str(seg) + ',' + str(t) + ',' + str(k) + ']')
+
         for k in range(K):
             for line in self.gas_inactive_line:
                 for t in range(T):
-                    self.model.addConstr(self.gas_line_flow_square[line, t, k] == self.gas_weymouth[line] *
-                        (self.gas_node_pressure_square[self.gas_pipe_start_node[line], t, k] -
-                         self.gas_node_pressure_square[self.gas_pipe_end_node[line], t, k]))
+                    x_value = np.linspace(
+                        (self.gas_flow_in_min[line] + self.gas_flow_out_min[line]) / 2,
+                        (self.gas_flow_in_max[line] + self.gas_flow_out_max[line]) / 2,
+                        self.segment_num
+                    )
+                    y_value = np.square(np.linspace(
+                        (self.gas_flow_in_min[line] + self.gas_flow_out_min[line]) / 2,
+                        (self.gas_flow_in_max[line] + self.gas_flow_out_max[line]) / 2,
+                        self.segment_num
+                    ))
+                    cons_expr1 = self.aux_weymouth_left[line, t, k] - sum(
+                        [self.gas_line_flow_segment[line, seg, t, k] * x_value[seg] for seg in range(self.segment_num)]
+                    )
+                    cons_expr2 = self.gas_line_flow_square[line, t, k] - sum(
+                        [self.gas_line_flow_segment[line, seg, t, k] * y_value[seg] for seg in range(self.segment_num)]
+                    )
+                    cons_expr3 = sum(self.gas_line_flow_segment[line, :, t, k]) - 1
+                    Complementary_equal(cons_expr1, self.model, self.DE[k], self.Dobj[k],
+                                        'flow_square_x[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
+                    Complementary_equal(cons_expr2, self.model, self.DE[k], self.Dobj[k],
+                                        'flow_square_y[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
+                    Complementary_equal(cons_expr3, self.model, self.DE[k], self.Dobj[k],
+                                        'flow_square_sum[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
+                    for seg in range(self.segment_num):
+                        cons_expr4 = self.gas_line_flow_segment[line, seg, t, k]
+                        cons_expr5 = binary_flow[line, seg, t, k] - self.gas_line_flow_segment[line, seg, t, k]
+                        Complementary_great(cons_expr4, self.model, self.DE[k], self.Dobj[k],
+                                            'f_s_sl[' + str(line) + ',' + str(seg) + ',' + str(t) + ',' + str(k) + ']')
+                        Complementary_great(cons_expr5, self.model, self.DE[k], self.Dobj[k],
+                                            'f_s_sg[' + str(line) + ',' + str(seg) + ',' + str(t) + ',' + str(k) + ']')
 
-        # for k in range(K):
-        #     for line in self.gas_inactive_line:
-        #         for t in range(T):
-        #             u = [
-        #                 self.aux_weymouth_left_binary[line, t, k],
-        #                 self.gas_node_pressure_binary[self.gas_pipe_end_node[line], t, k],
-        #                 self.gas_node_pressure_binary[self.gas_pipe_start_node[line], t, k]
-        #             ]
-        #             original_var_min = [self.gas_flow_in_min[line] + self.gas_flow_out_min[line],
-        #                                 self.gas_node_pressure_min[self.gas_pipe_end_node[line]],
-        #                                 self.gas_node_pressure_min[self.gas_pipe_start_node[line]]]
-        #             original_var_max = [self.gas_flow_in_max[line] + self.gas_flow_out_max[line],
-        #                                 self.gas_node_pressure_max[self.gas_pipe_end_node[line]],
-        #                                 self.gas_node_pressure_max[self.gas_pipe_start_node[line]]]
-        #             dual_var_min = [-10, -10, 0]
-        #             dual_var_max = [10, 10, 10]
-        #             self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], \
-        #             measurement = Complementary_soc111(
-        #                 [1, sqrt(self.gas_weymouth[line])],
-        #                 [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
-        #                 [sqrt(self.gas_weymouth[line])],
-        #                 [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
-        #                 self.model, self.DE[k], self.Dobj[k],
-        #                 'weymouth_left_soc[' + str(line) + ',' + str(t) + ',' + str(k) + ']',
-        #                 u,
-        #                 original_var_min,
-        #                 original_var_max,
-        #                 dual_var_min,
-        #                 dual_var_max,
-        #                 NNN
-        #                 )
-        #             self.mearsurement.append(measurement)
-        # for k in range(K):
-        #     for line in self.gas_inactive_line:
-        #         for t in range(T):
-        #             cons_expr1 = self.gas_weymouth[line] * (
-        #                     self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] -
-        #                     self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]
-        #             ) - (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k])
-        #             _ = Complementary_equal(cons_expr1, self.model, self.DE[k], self.Dobj[k],
-        #                                     'dual_weymouth_simplify' + str(line) + str(t) + str(k))
-        self.DDDD = sum(self.DE[0])
+        for k in range(K):
+            for line in self.gas_inactive_line:
+                for t in range(T):
+                    cons_expr1 = self.gas_line_flow_square[line, t, k] - self.gas_weymouth[line] * \
+                        (self.gas_node_pressure_square[self.gas_pipe_start_node[line], t, k] -
+                         self.gas_node_pressure_square[self.gas_pipe_end_node[line], t, k])
+                    Complementary_equal(cons_expr1, self.model, self.DE[k], self.Dobj[k],
+                                        'weymouth[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
+
         # self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
 
-    # 每次迭代， 更新 PCCP 部分
-    def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
-        return
-        # for k in range(K):
-        #     self.Dobj[k].extend([self.old_dual_obj[i] * (-1) for i in range(len(self.old_dual_obj))])
-        self.old_dual_obj = []
-
-        self.model.remove(self.old_vars)
-        self.model.remove(self.old_constraints)
-        self.old_vars = []
-        self.old_constraints = []
-
-        for k in range(K):
-            for line in self.gas_inactive_line:
-                for t in range(T):
-                    k1 = self.gas_weymouth[line]
-                    k2 = flow_in_old[line, t, k] + flow_out_old[line, t, k]
-                    k3 = (flow_in_old[line, t, k] + flow_out_old[line, t, k]) ** 2 / 4
-                    k4 = self.gas_weymouth[line] * ((pressure_end_old[self.gas_pipe_end_node[line], t, k]) ** 2)
-                    k5 = 2 * self.gas_weymouth[line] * pressure_end_old[self.gas_pipe_end_node[line], t, k]
-                    q = np.array([0, -1 * k2 / 2, -1 * k2 / 2, -1 * k5, -1])
-                    r = np.array([-1 * k3 - k4])
-                    d = sqrt(k1)
-                    x = np.array([self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
-                                  self.gas_flow_in[line, t, k],
-                                  self.gas_flow_out[line, t, k],
-                                  self.gas_node_pressure[self.gas_pipe_end_node[line], t, k],
-                                  self.pccp_relax[line, t, k]
-                                  ])
-
-                    # 两个辅助 变量
-                    cons_expr1 = self.aux_weymouth_right_1[line, t, k] - sum(q*x) - r - 1
-                    cons_expr2 = self.aux_weymouth_right_2[line, t, k] - sum(q*x) - r + 1
-                    dual_vars1, constr1, dual_obj1 = \
-                        Complementary_equal_plus(cons_expr1, self.model, self.DE[k], self.Dobj[k],
-                                                 'weymouth_right_aux1[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
-                    dual_vars2, constr2, dual_obj2 = \
-                        Complementary_equal_plus(cons_expr2, self.model, self.DE[k], self.Dobj[k],
-                                                 'weymouth_right_aux2[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
-
-                    MM = 1e1
-                    # 构建SOC 约束
-                    # 左对偶变量, 右对偶变量,  原SOC约束,      对偶SOC约束,      互补为零约束,     lagrange项
-                    dual_left, dual_right, constr_original, constr_dual, var_line, constrain_line, measurement = \
-                        Complementary_soc_plus111(
-                        [2 * d, 1],
-                        [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
-                         self.aux_weymouth_right_1[line, t, k]],
-                        [1],
-                        [self.aux_weymouth_right_2[line, t, k]],
-                        self.model, self.DE[k], self.Dobj[k],
-                        'weymouth_right_soc[' + str(line) + ',' + str(t) + ',' + str(k) + ']',
-                        [-MM, -MM, -MM],
-                        [MM, MM, MM],
-                        [-MM, -MM, -MM],
-                        [MM, MM, MM])
-                    # 追加旧的变量及约束
-                    self.old_vars.extend([dual_vars1, dual_vars2, dual_left, dual_right, var_line])
-                    self.old_constraints.extend([constr1, constr2, constr_original, constr_dual, constrain_line])
-                    self.old_dual_obj.extend([dual_obj1, dual_obj2])
-                    self.mearsurement.append(measurement)
-            # 用于 每次 更新 KKT 等价 部分
-
-        self.model.update()
     # 构建下层市场的目标函数，用于kkt求导的目标函数部分
     def build_lower_objective(self):
         # 市场 ： 整个社会成本最小
@@ -958,15 +859,13 @@ class OneLayer:
         self.lower_objective = sum(lower_objs)
 
     # KKT 等价中的 求导部分
-    def build_kkt_derivative_constraints(self, penalty):
+    def build_kkt_derivative_constraints(self):
         # 包含 下层目标函数 + lagrange 基本部分 + lagrange 增量部分 + P-CCP 罚项
         for k in range(K):
             self.DE[k] = sum(self.DE[k])
         self.dual_expression_basic = sum(self.DE)
         my_expr = MyExpr(self.lower_objective +
-                         self.dual_expression_basic +
-                         0*self.dual_expression_additional +
-                         0*penalty * sum(self.pccp_relax.flatten()))
+                         self.dual_expression_basic)
         # 对下层的 所有 原变量 求导， 注意要包含 pccp 项
         self.model.update()
         for var in self.all_lower_level_vars:
@@ -1001,7 +900,7 @@ class OneLayer:
                 )
 
     # 上层的目标函数， 这里 是 非线性的 直接 => 产量 * 边际价格 - 成本，    这里的一个问题是， chp的天然气 需要 按节点边际气价 付费吗？
-    def build_upper_objective_(self):  #
+    def build_upper_objective(self):  #
         obj_k = []
         for k in range(K):
             expected_cost = []
@@ -1025,7 +924,7 @@ class OneLayer:
             obj_k.append(-1 * sum(expected_cost))
         self.obj_k = obj_k
 
-    def build_upper_objective(self):
+    def build_upper_objective_(self):
         LC = [[] for i in range(K)]
         for k in range(K):
             # for gen in range(self.generator_lower_num):
@@ -1087,12 +986,12 @@ class OneLayer:
 
         # for k in range(K):
         #     self.model.addConstr(self.DE[k] == self.lower_objective)
-
+        self.model.setParam("OutputFlag", 0)
         self.model.setParam("IntegralityFocus", 1)
         self.model.setParam("NonConvex", 2)
         self.model.setParam("MIPFocus", 3)
         self.model.setParam('TimeLimit', 600)
-        # self.model.setParam("OutputFlag", 0)
+
 
         self.model.setObjective(np.array(self.obj_k).dot(np.array(distribution)))
         # self.model.setObjective(0)
@@ -1131,6 +1030,7 @@ class OneLayer:
         value_generator_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
         value_chp_power_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
         value_chp_heat_quoted_price = to_value(self.upper_chp_heat_quoted_price_tuple_dict)
+        value_well_quoted_price = to_value(self.upper_well_quoted_price_tuple_dict)
 
         obj_k = np.array([obj.getValue() * -1 for obj in self.obj_k])              # change to profile
 
@@ -1140,91 +1040,43 @@ class OneLayer:
             to_value_np(self.gas_flow_in),
             to_value_np(self.gas_flow_out)]
 
-        pccp = to_value_np(self.pccp_relax)
 
-        return [value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price], \
+        return [value_generator_quoted_price, value_chp_power_quoted_price, value_chp_heat_quoted_price, value_well_quoted_price], \
                obj_k, \
                linearization_point, \
-               pccp, \
                np.array(weymouth_left), \
                np.array(weymouth_right)
 
 
-    def sss(self):
-        objs_revenue = []
-        for k in range(K):
-            # power load output
-            for load in range(self.ele_load_num):
-                for t in range(T):
-                    objs_revenue.append(1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
-            # wind output part
-            for wind in range(self.wind_farm_num):
-                for t in range(T):
-                    objs_revenue.append(-1 * self.dual_node_power_balance[self.wind_connection_index[wind], t, k] *
-                                        self.wind_output[wind, k, t])
-            for line in range(self.ele_line_num):
-                for t in range(T):
-                    objs_revenue.append(-1 * self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
-                    objs_revenue.append(-1 * self.dual_line_power_flow_less[line, t, k] * self.ele_line_capacity[line])
-            for gen in range(self.generator_upper_num):
-                for t in range(T):
-                    objs_revenue.append(1 * self.dual_upper_generator_power_output_min[gen, t, k] * self.generator_upper_min[gen])
-                    objs_revenue.append(-1 * self.dual_upper_generator_power_output_max[gen, t, k] * self.generator_upper_max[gen])
-            for gen in range(self.generator_lower_num):
-                for t in range(T):
-                    objs_revenue.append(1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
-                    objs_revenue.append(-1 * self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
-            for chp in range(self.chp_lower_num):
-                for t in range(T):
-                    for point in range(self.chp_point_num):
-                        objs_revenue.append(-1 * self.dual_lower_chp_point_less_one[chp, point, t, k])
-                    objs_revenue.append(1 * self.dual_lower_chp_point_sum_one[chp, t, k])
-            for chp in range(self.chp_upper_num):
-                for t in range(T):
-                    for point in range(self.chp_point_num):
-                        objs_revenue.append(-1 * self.dual_upper_chp_point_less_one[chp, point, t, k])
-                    objs_revenue.append(1 * self.dual_upper_chp_point_sum_one[chp, t, k])
-            for exchanger in range(self.heat_exchanger_num):
-                for t in range(T):
-                    objs_revenue.append(1 * self.dual_exchanger_balance[exchanger, t, k] * self.heat_load[exchanger, t])
-            for heater in range(self.heat_heater_num):
-                for t in range(T):
-                    objs_revenue.append(-1 * self.dual_heater_supply_min[heater, t, k] * self.heater_tempe_supply_min[heater])
-                    objs_revenue.append(1 * self.dual_heater_supply_max[heater, t, k] * self.heater_tempe_supply_max[heater])
-                    objs_revenue.append(-1 * self.dual_heater_return_min[heater, t, k] * self.heater_tempe_return_min[heater])
-                    objs_revenue.append(1 * self.dual_heater_return_max[heater, t, k] * self.heater_tempe_return_max[heater])
 
-            for exchanger in range(self.heat_exchanger_num):
-                for t in range(T):
-                    objs_revenue.append(-1 * self.dual_exchanger_supply_min[exchanger, t, k] * self.exchanger_tempe_supply_min[exchanger])
-                    objs_revenue.append(1 * self.dual_exchanger_supply_max[exchanger, t, k] * self.exchanger_tempe_supply_max[exchanger])
-                    objs_revenue.append(-1 * self.dual_exchanger_return_min[exchanger, t, k] * self.exchanger_tempe_return_min[exchanger])
-                    objs_revenue.append(1 * self.dual_exchanger_return_max[exchanger, t, k] * self.exchanger_tempe_return_max[exchanger])
-        self.jl = sum(objs_revenue)
-        expected_cost = []
-        for chp in range(self.chp_upper_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.upper_chp_heat_quoted_price[chp, t])
-                    expected_cost.append(self.upper_chp_power_output[chp, t, k] * self.upper_chp_power_quoted_price[chp, t])
-        for gen in range(self.generator_upper_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(self.upper_generator_power_output[gen, t, k] * self.upper_generator_quoted_price[gen, t])
-        for chp in range(self.chp_lower_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(1 * self.chp_lower_coeff_const[chp])
-                    expected_cost.append(1 * self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k])
-                    expected_cost.append(1 * self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, t, k] *
-                                         self.lower_chp_power_output[chp, t, k])
-                    expected_cost.append(1 * self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k])
-                    expected_cost.append(1 * self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, t, k] *
-                                         self.lower_chp_heat_output[chp, t, k])
-                    expected_cost.append(1 * self.chp_lower_coeff_cross[chp] * self.lower_chp_heat_output[chp, t, k] *
-                                         self.lower_chp_power_output[chp, t, k])
-        for gen in range(self.generator_lower_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
-        self.jr = sum(expected_cost)
+
+
+from resource.config4_with_gas import get_config
+from give_bid_price_cal_original_problem import OneLayer1
+
+if __name__ == '__main__':
+    power_system_info, heat_system_info, chp_system_info, gas_system_info = get_config()
+    one1 = OneLayer1(power_system_info, heat_system_info, chp_system_info, gas_system_info)
+    one1.build_power_system()
+    one1.build_gas_system()
+    one1.build_heat_system()
+    one1.build_power_system_original_and_dual_constraints()
+    one1.build_heat_system_original_and_dual_constraints()
+    one1.build_gas_system_original_and_dual_constrains()
+    one1.build_lower_objective(np.ones((10, 10)) * 5, np.ones((10, 10)) * 5)
+    bin1, bin2 = one1.optimize()
+
+
+
+    one2 = OneLayer2(power_system_info, heat_system_info, chp_system_info, gas_system_info)
+    one2.build_power_system()
+    one2.build_gas_system()
+    one2.build_heat_system()
+    one2.build_power_system_original_and_dual_constraints()
+    one2.build_heat_system_original_and_dual_constraints()
+    one2.build_gas_system_original_and_dual_constrains(bin1, bin2)
+    one2.build_lower_objective()
+    one2.build_kkt_derivative_constraints()
+    one2.build_upper_constraints()
+    one2.build_upper_objective()
+    d = one2.optimize([1])

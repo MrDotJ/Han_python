@@ -420,11 +420,11 @@ def LowerOnlyLowerVarsSOCOne():
     Complementary_great(expr8, model, DE, Dobj, 'e8')
     Complementary_great(expr9, model, DE, Dobj, 'e9')
 
-    Complementary_soc([3, 4], [x, y], [5], [z], model, DE, Dobj, 'e10')
+    Complementary_soc_without_Com([3, 4], [x, y], [5], [z], model, DE, Dobj, 'e10')
 
     model.update()
 
-    # model.addConstr(lower_obj == sum(Dobj), name='Strong_Dual')
+    model.addConstr(lower_obj == sum(Dobj), name='Strong_Dual')
 
     lagrange = lower_obj + sum(DE)
     myExpr = MyExpr(lagrange)
@@ -462,17 +462,17 @@ def LowerOnlyLowerVarsSOCWithoutComOne():
     expr9 = z - 3
 
 
-    Complementary_great(expr1, model, DE, Dobj, 'e1')
-    Complementary_great(expr2, model, DE, Dobj, 'e2')
-    Complementary_great(expr3, model, DE, Dobj, 'e3')
-    Complementary_great(expr4, model, DE, Dobj, 'e4')
-    Complementary_great(expr5, model, DE, Dobj, 'e5')
-    Complementary_great(expr6, model, DE, Dobj, 'e6')
-    Complementary_great(expr7, model, DE, Dobj, 'e7')
-    Complementary_great(expr8, model, DE, Dobj, 'e8')
-    Complementary_great(expr9, model, DE, Dobj, 'e9')
+    aa1 = Complementary_great_without_Com(expr1, model, DE, Dobj, 'e1')
+    aa2 =Complementary_great_without_Com(expr2, model, DE, Dobj, 'e2')
+    aa3 =Complementary_great_without_Com(expr3, model, DE, Dobj, 'e3')
+    aa4 =Complementary_great_without_Com(expr4, model, DE, Dobj, 'e4')
+    aa5 =Complementary_great_without_Com(expr5, model, DE, Dobj, 'e5')
+    aa6 =Complementary_great_without_Com(expr6, model, DE, Dobj, 'e6')
+    aa7 =Complementary_great_without_Com(expr7, model, DE, Dobj, 'e7')
+    aa8 =Complementary_great_without_Com(expr8, model, DE, Dobj, 'e8')
+    aa9 =Complementary_great_without_Com(expr9, model, DE, Dobj, 'e9')
 
-    Complementary_soc([3, 4], [x, y], [5], [z], model, DE, Dobj, 'e10')
+    Complementary_soc_without_Com([3, 4], [x, y], [5], [z], model, DE, Dobj, 'e10')
 
     model.update()
 
