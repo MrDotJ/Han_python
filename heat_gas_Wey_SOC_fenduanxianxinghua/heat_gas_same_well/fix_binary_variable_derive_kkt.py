@@ -592,7 +592,7 @@ class OneLayer2:
                     self.dual_node_gas_balance[node, t, k] = Complementary_equal(
                         1*cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'node_gas_balance[' + str(node) + ',' + str(t) + ',' + str(k) + ']')
-                    # self.model.addConstr(self.dual_node_gas_balance[node, t, k] >= 0)
+                    self.model.addConstr(self.dual_node_gas_balance[node, t, k] >= 0)
 
         for k in range(K):
             for well in range(self.well_upper_num):

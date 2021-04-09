@@ -1,7 +1,7 @@
 import gurobipy as gurobi
 import numpy as np
 
-M = 1e4
+M = 1e7
 N = 3
 
 INFINITY = gurobi.GRB.INFINITY
@@ -204,11 +204,11 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
     left_var_length = len(left_coeff)
     right_var_length = len(right_coeff)
     # 左侧对偶变量
-    dual_left = model.addVars(left_var_length, lb=-1*INFINITY*0, ub=INFINITY*0,
+    dual_left = model.addVars(left_var_length, lb=-1*INFINITY*1, ub=INFINITY*1,
                               name=dual_var_name + '_dual_left')
     # model.addConstr(dual_left[0] == 0)
     # 右侧对偶变量
-    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY*0,
+    dual_right = model.addVars(right_var_length, lb=0, ub=INFINITY*1,
                                name=dual_var_name + '_dual_right')
     # 添加原锥约束
     expr_left = gurobi.quicksum([left_coeff[i] * left_coeff[i] * left_var[i] * left_var[i]
@@ -229,50 +229,10 @@ def Complementary_soc_plus(left_coeff, left_var, right_coeff, right_var, model, 
                                     for i in range(left_var_length)]) + \
                    gurobi.quicksum([right_coeff[i] * right_coeff[i] *  right_var[i] * dual_right[i]
                                     for i in range(right_var_length)])
-    # complementary_constr = model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
-
-    # # =============== deal with lagrange sum equal zero ==============
-    # xi is dual variables, xj is original variables
+    complementary_constr = model.addConstr(lagrange_sum == 0, name=dual_var_name + '[Lagrange]')
     var_linear = []
     constrain_linear = []
-    original_var = left_var + right_var
-    dual_var = tonp(dual_left).tolist()+tonp(dual_right).tolist()
-    coeff = left_coeff + right_coeff
-    w = model.addVars(left_var_length + right_var_length, lb=-1*INF, ub=INF)
-    var_linear.append(w)
-    measurement = [lagrange_sum, dual_left, dual_right]
-    for i in range(left_var_length + right_var_length):
-        wij = w[i]
-        binary = model.addVars(N, vtype=gurobi.GRB.BINARY)
-        var_linear.append(binary)
-        xi = dual_var[i]
-        xj = original_var[i]
-        measurement.append([xi, xj, xi*xj, wij, wij - xi * xj])
-        xi_min = dual_var_min[i]
-        xi_max = dual_var_max[i]
-        xj_min = original_var_min[i]
-        xj_max = original_var_max[i]
-        xjn_min = np.arange(N) / N * (xj_max - xj_min) + xj_min
-        xjn_max = (np.arange(N) + 1) / N * (xj_max - xj_min) + xj_min
-        constrain_linear.append(model.addConstr(xi >= xi_min))
-        constrain_linear.append(model.addConstr(xi <= xi_max))
-        for n in range(N):
-            constrain_linear.append(
-                model.addConstr((binary[n] == 1) >> (wij >= (xi * xjn_min[n] + xj * xi_min - xi_min * xjn_min[n]))))
-            constrain_linear.append(
-                model.addConstr((binary[n] == 1) >> (wij >= (xi * xjn_max[n] + xj * xi_max - xi_max * xjn_max[n]))))
-            constrain_linear.append(
-                model.addConstr((binary[n] == 1) >> (wij <= (xi * xjn_min[n] + xj * xi_max - xi_max * xjn_min[n]))))
-            constrain_linear.append(
-                model.addConstr((binary[n] == 1) >> (wij <= (xi * xjn_max[n] + xj * xi_min - xi_min * xjn_max[n]))))
-            constrain_linear.append(
-                model.addConstr((binary[n] == 1) >> (xj >= xjn_min[n])))
-            constrain_linear.append(
-                model.addConstr((binary[n] == 1) >> (xj <= xjn_max[n])))
-        constrain_linear.append(model.addConstr(gurobi.quicksum(binary) == 1))
-    constrain_linear.append(
-        model.addConstr(sum([coeff[i]**2 * w[i] for i in range(left_var_length + right_var_length)]) == 0,
-                        name='[Lagrange]' + dual_var_name))
+    measurement = []
     # =============== END
 
     dual_expression.append(-1 * lagrange_sum)

@@ -1,4 +1,4 @@
-from resource.utility_soc_PWL import *
+from resource.caocaocao import *
 from resource.config4_with_gas import T, K
 from math import sqrt
 
@@ -258,9 +258,9 @@ class OneLayer:
         self.DE = [[] for i in range(K)]
         self.Dobj = [[] for i in range(K)]
 
+    # ========================= 创建变量 ========================
     def build_power_system(self):
         return
-
     def build_gas_system(self):
         self.upper_well_quoted_price_tuple_dict   = \
             self.model.addVars(self.well_upper_num, T, name='upper_gas_quoted_price')
@@ -320,7 +320,6 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.aux_weymouth_right_2.flatten().tolist())
         self.all_lower_level_vars.extend(self.pccp_relax          .flatten().tolist())
         self.all_lower_level_vars.extend(self.gas_linepack.flatten().tolist())
-
     def build_heat_system(self):
         self.upper_chp_heat_quoted_price_tuple_dict = \
             self.model.addVars(self.chp_upper_num, T, lb=0, name='upper_chp_heat_quoted_price')
@@ -380,13 +379,12 @@ class OneLayer:
         self.all_lower_level_vars.extend(self.heat_pipe_start_tempe_return.flatten().tolist())
         self.all_lower_level_vars.extend(self.heat_pipe_end_tempe_return.flatten().tolist())
 
+    # ========================= 创建约束 =======================
+    # ========== stage 1: 创建原约束
     def build_power_system_original_and_dual_constraints(self):
         return
-
     # 构建 热网 部分
     def build_heat_system_original_and_dual_constraints(self):
-        dual_expr = []
-
         for k in range(K):
             for chp in range(self.chp_upper_num):
                 for t in range(T):
@@ -555,12 +553,8 @@ class OneLayer:
                         'exchanger_return_max[' + str(exchanger) + str(t) + ',' + str(k) + ']')
 
         # self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
-
     # 构建 气网 部分
     def build_gas_system_original_and_dual_constrains(self):
-        self.DAAA = sum(self.DE[0])
-        dual_expr = []
-
         for k in range(K):
             for node in range(self.gas_node_num):
                 for t in range(T):
@@ -722,9 +716,6 @@ class OneLayer:
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'pccp_relax_great_zero[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
-
-        self.mearsurement = []
-        self.DBBB = sum(self.DE[0])
         for k in range(K):
             for line in self.gas_inactive_line:
                 for t in range(T):
@@ -734,39 +725,26 @@ class OneLayer:
                         cons_expr1, self.model, self.DE[k], self.Dobj[k],
                         'weymouth_left_aux[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
-        self.DCCC = sum(self.DE[0])
         for k in range(K):
             for line in self.gas_inactive_line:
                 for t in range(T):
                     MM = 1e1
-                    self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k], \
-                    measurement = Complementary_soc111(
+                    self.dual_weymouth_relax_left_left[line, t, k], self.dual_weymouth_relax_left_right[line, t, k]\
+                        = Complementary_soc(
                         [1, sqrt(self.gas_weymouth[line])],
                         [self.aux_weymouth_left[line, t, k], self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]],
                         [sqrt(self.gas_weymouth[line])],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k]],
                         self.model, self.DE[k], self.Dobj[k],
                         'weymouth_left_soc[' + str(line) + ',' + str(t) + ',' + str(k) + ']',
-                        [-200, -200, -200],
+                        [-0, -0, -0],
                         [200, 200, 200],
                         [-MM, -MM, -MM],
-                        [MM, MM, MM]
+                        [MM, MM, MM],
                         )
-                    self.mearsurement.append(measurement)
-        # for k in range(K):
-        #     for line in self.gas_inactive_line:
-        #         for t in range(T):
-        #             cons_expr1 = self.gas_weymouth[line] * (
-        #                     self.gas_node_pressure[self.gas_pipe_start_node[line], t, k] -
-        #                     self.gas_node_pressure[self.gas_pipe_end_node[line], t, k]
-        #             ) - (self.gas_flow_in[line, t, k] + self.gas_flow_out[line, t, k])
-        #             _ = Complementary_equal(cons_expr1, self.model, self.DE[k], self.Dobj[k],
-        #                                     'dual_weymouth_simplify' + str(line) + str(t) + str(k))
-        self.DDDD = sum(self.DE[0])
-        # self.dual_expression_basic = self.dual_expression_basic + sum(dual_expr)
-
-    # 每次迭代， 更新 PCCP 部分
+    # ========== stage 2： 更新 PCCP 部分
     def update_gas_system_pccp_original_and_dual_constraints(self, pressure_end_old, flow_in_old, flow_out_old):
+        # return
         # for k in range(K):
         #     self.Dobj[k].extend([self.old_dual_obj[i] * (-1) for i in range(len(self.old_dual_obj))])
         self.old_dual_obj = []
@@ -797,18 +775,19 @@ class OneLayer:
                     # 两个辅助 变量
                     cons_expr1 = self.aux_weymouth_right_1[line, t, k] - sum(q*x) - r - 1
                     cons_expr2 = self.aux_weymouth_right_2[line, t, k] - sum(q*x) - r + 1
-                    dual_vars1, constr1, dual_obj1 = \
-                        Complementary_equal_plus(cons_expr1, self.model, self.DE[k], self.Dobj[k],
+                    dual_vars1 = \
+                        Complementary_equal(cons_expr1, self.model, self.DE[k], self.Dobj[k],
                                                  'weymouth_right_aux1[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
-                    dual_vars2, constr2, dual_obj2 = \
-                        Complementary_equal_plus(cons_expr2, self.model, self.DE[k], self.Dobj[k],
+                    dual_vars2 = \
+                        Complementary_equal(cons_expr2, self.model, self.DE[k], self.Dobj[k],
                                                  'weymouth_right_aux2[' + str(line) + ',' + str(t) + ',' + str(k) + ']')
 
-                    MM = 1e1
+                    MM = 1e2
                     # 构建SOC 约束
                     # 左对偶变量, 右对偶变量,  原SOC约束,      对偶SOC约束,      互补为零约束,     lagrange项
-                    dual_left, dual_right, constr_original, constr_dual, var_line, constrain_line, measurement = \
-                        Complementary_soc_plus111(
+                    # dual_left, dual_right, constr_original, constr_dual, var_line, constrain_line, measurement = \
+                    dual_left, dual_right = \
+                        Complementary_soc(
                         [2 * d, 1],
                         [self.gas_node_pressure[self.gas_pipe_start_node[line], t, k],
                          self.aux_weymouth_right_1[line, t, k]],
@@ -821,14 +800,15 @@ class OneLayer:
                         [-MM, -MM, -MM],
                         [MM, MM, MM])
                     # 追加旧的变量及约束
-                    self.old_vars.extend([dual_vars1, dual_vars2, dual_left, dual_right, var_line])
-                    self.old_constraints.extend([constr1, constr2, constr_original, constr_dual, constrain_line])
-                    self.old_dual_obj.extend([dual_obj1, dual_obj2])
-                    self.mearsurement.append(measurement)
+                    # self.old_vars.extend([dual_vars1, dual_vars2, dual_left, dual_right, var_line])
+                    # self.old_constraints.extend([constr1, constr2, constr_original, constr_dual, constrain_line])
+                    # self.old_dual_obj.extend([dual_obj1, dual_obj2])
+                    # self.mearsurement.append(measurement)
             # 用于 每次 更新 KKT 等价 部分
 
         self.model.update()
-    # 构建下层市场的目标函数，用于kkt求导的目标函数部分
+    # ========== stage 3: 求导的约束
+    # 1. 构建下层市场的目标函数，用于kkt求导的目标函数部分
     def build_lower_objective(self):
         # 市场 ： 整个社会成本最小
         lower_objs = []
@@ -871,8 +851,7 @@ class OneLayer:
                     lower_objs.append(self.well_lower_cost[well] * self.lower_gas_well_output[well, time, k])
 
         self.lower_objective = sum(lower_objs)
-
-    # KKT 等价中的 求导部分
+    # 2. KKT 等价中的 求导部分
     def build_kkt_derivative_constraints(self, penalty):
         # 包含 下层目标函数 + lagrange 基本部分 + lagrange 增量部分 + P-CCP 罚项
         for k in range(K):
@@ -881,13 +860,13 @@ class OneLayer:
         my_expr = MyExpr(self.lower_objective +
                          self.dual_expression_basic +
                          0*self.dual_expression_additional +
-                         0*penalty * sum(self.pccp_relax.flatten()))
+                         0 * sum(self.pccp_relax.flatten()))
         # 对下层的 所有 原变量 求导， 注意要包含 pccp 项
         self.model.update()
         for var in self.all_lower_level_vars:
             expr = my_expr.getCoeff(var)
             my_expr.addConstr(expr, self.model, var.VarName)
-
+    # ========== stage 4: 双层约束
     # 上层目标函数 报价 的约束
     def build_upper_constraints(self):
         for chp in range(self.chp_upper_num):
@@ -915,8 +894,10 @@ class OneLayer:
                     name='upper_gas_well_quoted_price_max' + str(t) + '_well_' + str(well)
                 )
 
+    # ========================== 构建目标函数 ======================
     # 上层的目标函数， 这里 是 非线性的 直接 => 产量 * 边际价格 - 成本，    这里的一个问题是， chp的天然气 需要 按节点边际气价 付费吗？
-    def build_upper_objective_(self):  #
+    # 写法1： 双线性
+    def build_upper_objective(self):  #
         obj_k = []
         for k in range(K):
             expected_cost = []
@@ -939,8 +920,8 @@ class OneLayer:
 
             obj_k.append(-1 * sum(expected_cost))
         self.obj_k = obj_k
-
-    def build_upper_objective(self):
+    # 写法2： 线性化之后
+    def build_upper_objective_(self):
         LC = [[] for i in range(K)]
         for k in range(K):
             # for gen in range(self.generator_lower_num):
@@ -998,6 +979,7 @@ class OneLayer:
         for k in range(K):
             self.obj_k.append((Dobj[k] - LC[k] + OE[k] - UC[k]) * (-1))
 
+    # ========================= 优化 ==============================
     def optimize(self, distribution):
 
         # for k in range(K):
@@ -1063,83 +1045,3 @@ class OneLayer:
                pccp, \
                np.array(weymouth_left), \
                np.array(weymouth_right)
-
-
-    def sss(self):
-        objs_revenue = []
-        for k in range(K):
-            # power load output
-            for load in range(self.ele_load_num):
-                for t in range(T):
-                    objs_revenue.append(1 * self.dual_node_power_balance[self.ele_load_index[load], t, k] * self.ele_load[load, t])
-            # wind output part
-            for wind in range(self.wind_farm_num):
-                for t in range(T):
-                    objs_revenue.append(-1 * self.dual_node_power_balance[self.wind_connection_index[wind], t, k] *
-                                        self.wind_output[wind, k, t])
-            for line in range(self.ele_line_num):
-                for t in range(T):
-                    objs_revenue.append(-1 * self.dual_line_power_flow_great[line, t, k] * self.ele_line_capacity[line])
-                    objs_revenue.append(-1 * self.dual_line_power_flow_less[line, t, k] * self.ele_line_capacity[line])
-            for gen in range(self.generator_upper_num):
-                for t in range(T):
-                    objs_revenue.append(1 * self.dual_upper_generator_power_output_min[gen, t, k] * self.generator_upper_min[gen])
-                    objs_revenue.append(-1 * self.dual_upper_generator_power_output_max[gen, t, k] * self.generator_upper_max[gen])
-            for gen in range(self.generator_lower_num):
-                for t in range(T):
-                    objs_revenue.append(1 * self.dual_lower_generator_power_output_min[gen, t, k] * self.generator_lower_min[gen])
-                    objs_revenue.append(-1 * self.dual_lower_generator_power_output_max[gen, t, k] * self.generator_lower_max[gen])
-            for chp in range(self.chp_lower_num):
-                for t in range(T):
-                    for point in range(self.chp_point_num):
-                        objs_revenue.append(-1 * self.dual_lower_chp_point_less_one[chp, point, t, k])
-                    objs_revenue.append(1 * self.dual_lower_chp_point_sum_one[chp, t, k])
-            for chp in range(self.chp_upper_num):
-                for t in range(T):
-                    for point in range(self.chp_point_num):
-                        objs_revenue.append(-1 * self.dual_upper_chp_point_less_one[chp, point, t, k])
-                    objs_revenue.append(1 * self.dual_upper_chp_point_sum_one[chp, t, k])
-            for exchanger in range(self.heat_exchanger_num):
-                for t in range(T):
-                    objs_revenue.append(1 * self.dual_exchanger_balance[exchanger, t, k] * self.heat_load[exchanger, t])
-            for heater in range(self.heat_heater_num):
-                for t in range(T):
-                    objs_revenue.append(-1 * self.dual_heater_supply_min[heater, t, k] * self.heater_tempe_supply_min[heater])
-                    objs_revenue.append(1 * self.dual_heater_supply_max[heater, t, k] * self.heater_tempe_supply_max[heater])
-                    objs_revenue.append(-1 * self.dual_heater_return_min[heater, t, k] * self.heater_tempe_return_min[heater])
-                    objs_revenue.append(1 * self.dual_heater_return_max[heater, t, k] * self.heater_tempe_return_max[heater])
-
-            for exchanger in range(self.heat_exchanger_num):
-                for t in range(T):
-                    objs_revenue.append(-1 * self.dual_exchanger_supply_min[exchanger, t, k] * self.exchanger_tempe_supply_min[exchanger])
-                    objs_revenue.append(1 * self.dual_exchanger_supply_max[exchanger, t, k] * self.exchanger_tempe_supply_max[exchanger])
-                    objs_revenue.append(-1 * self.dual_exchanger_return_min[exchanger, t, k] * self.exchanger_tempe_return_min[exchanger])
-                    objs_revenue.append(1 * self.dual_exchanger_return_max[exchanger, t, k] * self.exchanger_tempe_return_max[exchanger])
-        self.jl = sum(objs_revenue)
-        expected_cost = []
-        for chp in range(self.chp_upper_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(self.upper_chp_heat_output[chp, t, k] * self.upper_chp_heat_quoted_price[chp, t])
-                    expected_cost.append(self.upper_chp_power_output[chp, t, k] * self.upper_chp_power_quoted_price[chp, t])
-        for gen in range(self.generator_upper_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(self.upper_generator_power_output[gen, t, k] * self.upper_generator_quoted_price[gen, t])
-        for chp in range(self.chp_lower_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(1 * self.chp_lower_coeff_const[chp])
-                    expected_cost.append(1 * self.chp_lower_coeff_p_1[chp] * self.lower_chp_power_output[chp, t, k])
-                    expected_cost.append(1 * self.chp_lower_coeff_p_2[chp] * self.lower_chp_power_output[chp, t, k] *
-                                         self.lower_chp_power_output[chp, t, k])
-                    expected_cost.append(1 * self.chp_lower_coeff_h_1[chp] * self.lower_chp_heat_output[chp, t, k])
-                    expected_cost.append(1 * self.chp_lower_coeff_h_2[chp] * self.lower_chp_heat_output[chp, t, k] *
-                                         self.lower_chp_heat_output[chp, t, k])
-                    expected_cost.append(1 * self.chp_lower_coeff_cross[chp] * self.lower_chp_heat_output[chp, t, k] *
-                                         self.lower_chp_power_output[chp, t, k])
-        for gen in range(self.generator_lower_num):
-            for t in range(T):
-                for k in range(K):
-                    expected_cost.append(self.generator_lower_cost[gen] * self.lower_generator_power_output[gen, t, k])
-        self.jr = sum(expected_cost)
