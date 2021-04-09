@@ -1,5 +1,5 @@
 from resource.config4_with_gas import K
-from resource.utility import *
+from heat_gas_Wey_SOC_fenduanxianxinghua.heat_gas_same_well.test.utility import *
 
 
 class SecondLayer:

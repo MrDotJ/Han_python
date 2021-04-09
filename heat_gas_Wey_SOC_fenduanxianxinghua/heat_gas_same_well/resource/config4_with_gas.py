@@ -79,13 +79,26 @@ def get_config():
 
     ## 只有 上层 一个chp机组啊
     upper_chp_info = np.array([
-        # a0   p1        a1 p2       a2  h1         a3  h2       a4 cross        a5 const             heater     bid_power      bid_heat
+        # a0   p1        a1 p2       a2  h1         a3  h2       a4 cross        a5 const         heater     bid_power      bid_heat
         [
           20 * 0.6,    0 * 0.06,   1.5 * 0.6,      .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0,          20,              5
         ],
         [
             20 * 0.6,   0 * 0.06,   1.5 * 0.6,      .0 * 0.6,    0. * 0.6,     0.0 * 0.6,            0,          20,              5
         ],
+    ])
+    upper_chp_POWER = np.array([
+        [0.81 * 1,     2.97 * 1,    2.55 * 1,       0],
+        [0.81 * 1,     2.97 * 1,    2.55 * 1,       0],
+    ])
+
+    upper_chp_HEAT = np.array([
+        [0.528 * 1,     2.8 * 1,       0.45 * 1,     0 * 1],
+        [0.328 * 1,     2.3 * 1,       0.35 * 1,     0 * 1],
+    ])*1
+    # 上层chp连接的电节点
+    upper_chp_power_index = np.array([
+        2, 2,
     ])
 
     lower_chp_info = np.array([
@@ -96,7 +109,6 @@ def get_config():
             2 * 0.6,   0 * 0.06,     1. * 10.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
          ],
         [
-
             2 * 0.6,   0 * 0.06,     1. * 10.6,   .0 * 0.6,    0. * 0.6,      0.0 * 0.6,            0
         ],
         [
@@ -104,15 +116,6 @@ def get_config():
         ],
     ])
 
-    upper_chp_POWER = np.array([
-        [0.81 * 1,     2.97 * 1,    2.55 * 1,       0],
-        [0.81 * 1,     2.97 * 1,    2.55 * 1,       0],
-    ])
-
-    upper_chp_HEAT = np.array([
-        [0.528 * 1,     2.8 * 1,       0.45 * 1,     0 * 1],
-        [0.328 * 1,     2.3 * 1,       0.35 * 1,     0 * 1],
-    ])*1
 
     lower_chp_POWER = np.array([
         [0, 0, 0, 0],
@@ -128,13 +131,11 @@ def get_config():
         [0.3*10,      0.2*10,      0.1*10,       0.0],
     ])
 
-    upper_chp_power_index = np.array([
-        2, 2,
-    ])
-
+    # 下层chp连接的电节点
     lower_chp_power_index = np.array([
         2, 2, 2, 2,
     ])
+
 
     chp_upper_connection_gas_index = np.array([
         1, 3,
@@ -143,12 +144,14 @@ def get_config():
         1, 2, 3, 5
     ])
 
-    lower_chp_connection_well_index = np.array([
-        0, 1, 2, 3
-    ])
     upper_chp_connection_well_index = np.array([
         0, 0,
     ])
+
+    lower_chp_connection_well_index = np.array([
+        0, 1, 2, 3
+    ])
+
 
     heat_network_supply = np.array([
         # Beginning node Terminal node length(m)    flow(kg / h)
@@ -263,6 +266,35 @@ def get_config():
         [1,      0.2],
         [2,      0.3],
     ])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

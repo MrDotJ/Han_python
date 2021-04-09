@@ -1,4 +1,4 @@
-from resource.caocaocao import *
+from resource.utility import *
 from resource.config4_with_gas import T, K
 from math import sqrt
 
@@ -860,7 +860,7 @@ class OneLayer:
         my_expr = MyExpr(self.lower_objective +
                          self.dual_expression_basic +
                          0*self.dual_expression_additional +
-                         0 * sum(self.pccp_relax.flatten()))
+                         -4 * sum(self.pccp_relax.flatten()))
         # 对下层的 所有 原变量 求导， 注意要包含 pccp 项
         self.model.update()
         for var in self.all_lower_level_vars:
